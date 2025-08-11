@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { View, Text, Animated, Dimensions, Alert, Linking, LogBox } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaProvider, useSafeAreaInsets, initialWindowMetrics } from 'react-native-safe-area-context';
@@ -59,13 +59,13 @@ function AppInner() {
   // Guard to avoid setState loops while we animate the map
   const isAnimatingRef = useRef(false);
   const animTimerRef = useRef(null);
-  const animateToRegionSafe = (r, d = 280) => {
+  const animateToRegionSafe = useCallback((r, d = 280) => {
     if (!mapRef.current) return;
     isAnimatingRef.current = true;
     try { mapRef.current.animateToRegion(r, d); } catch {}
     if (animTimerRef.current) clearTimeout(animTimerRef.current);
     animTimerRef.current = setTimeout(() => { isAnimatingRef.current = false; }, d + 80);
-  };
+  }, []);
 
   const { settings, saveSettings } = useSettings();
 
