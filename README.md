@@ -131,20 +131,20 @@ Vytvoř soubor .env v kořeni projektu:
 
 Na Google Cloud Console povol Places API a Maps JavaScript API a klíč ideálně omez na bundleIdentifier.
 
-Spuštění
-# Dev server
+### Spuštění
+#### Dev server
 npx expo start
 
-# iOS simulator
+#### iOS simulator
 npx expo start --ios
 
-# Android emulator
+#### Android emulator
 npx expo start --android
 
-# Web (omezené funkce)
+#### Web (omezené funkce)
 npx expo start --web
 
-🔧 Vývoj & stack
+## 🔧 Vývoj & stack
 	•	Expo SDK 53, React Native 0.79.5, React 19
 	•	react-native-maps, react-native-map-clustering, @react-native-async-storage/async-storage, expo-location, expo-haptics
 	•	Stav: React hooky, perzistence: AsyncStorage
@@ -152,13 +152,13 @@ npx expo start --web
 
 ⸻
 
-📱 Platformy
+## 📱 Platformy
 	•	iOS / Android: plná funkčnost (mapy, haptika, safe-area)
 	•	Web: omezeno (bez GPS/haptiky)
 
 ⸻
 
-🚧 Roadmap (výběr)
+## 🚧 Roadmap (výběr)
 	•	Offline cache výsledků
 	•	Pokročilé filtry (24/7, samoobsluha)
 	•	Recenze/hodnocení
@@ -169,7 +169,7 @@ npx expo start --web
 
 ⸻
 
-🚢 Build & TestFlight (iOS) ✈️
+## 🚢 Build & TestFlight (iOS) ✈️
 
 Pozn.: Pro TestFlight je nutný placený Apple Developer účet a záznam aplikace v App Store Connect s odpovídajícím Bundle ID.
 
@@ -210,23 +210,19 @@ Ujisti se, že v eas.json máš profil production a (volitelně) vyplněnou sekc
   }
 }`
 
-🤝 Contributing
+## 🤝 Contributing
 	1.	Forkni repozitář
 	2.	Vytvoř feature větev (git checkout -b feature/xyz)
 	3.	Commitni změny (git commit -m "Add xyz")
 	4.	Pushni větev (git push origin feature/xyz)
 	5.	Otevři Pull Request
 
-📄 Licence
+## 📄 Licence
 
 MIT (viz soubor LICENSE).
 
-🙏 Poděkování
+## 🙏 Poděkování
 	•	Google Places API
 	•	Expo tým
 	•	Komunita React Native
 	•	Autoři open-source knihoven
-
-⸻
-
-Built with ❤️ using React Native and Expo 🚀
