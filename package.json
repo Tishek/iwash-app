@@ -21,10 +21,14 @@
     "react-native": "0.79.5",
     "react-native-map-clustering": "^4.0.0",
     "react-native-maps": "1.20.1",
-    "react-native-safe-area-context": "5.4.0"
+    "react-native-safe-area-context": "5.4.0",
+    "expo-constants": "~17.1.7",
+    "expo-dev-client": "~5.2.4"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.20.0",
+    "typescript": "~5.8.3",
+    "@types/react": "~19.0.10"
   },
   "private": true
 }
