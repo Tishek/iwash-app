@@ -217,10 +217,6 @@ Ujisti se, že v eas.json máš profil production a (volitelně) vyplněnou sekc
 	4.	Pushni větev (git push origin feature/xyz)
 	5.	Otevři Pull Request
 
-## 📄 Licence
-
-MIT (viz soubor LICENSE).
-
 ## 🙏 Poděkování
 	•	Google Places API
 	•	Expo tým
