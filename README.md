@@ -127,7 +127,7 @@ src/
 Konfigurace prostředí
 
 Vytvoř soubor .env v kořeni projektu:
-`EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY`
+EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_EXPO_PUBLIC_GOOGLE_MAPS_API_KEY`
 
 Na Google Cloud Console povol Places API a Maps JavaScript API a klíč ideálně omez na bundleIdentifier.
 

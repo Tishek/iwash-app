@@ -2,9 +2,9 @@ import { inferType } from '../utils/inferType';
 import { normalizeStr } from '../utils/text';
 import { OVERRIDE_EXCLUDE, OVERRIDE_FULL, MAX_RESULTS } from '../utils/constants';
 import { distanceMeters } from '../utils/geo';
-import { GOOGLE_MAPS_API_KEY } from '../utils/config';
+import { EXPO_PUBLIC_GOOGLE_MAPS_API_KEY } from '../utils/config';
 
-const API_KEY = GOOGLE_MAPS_API_KEY;
+const API_KEY = EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 export async function fetchNearbyCarWashes({ searchCenter, radiusM }) {
   if (!API_KEY) throw new Error('EXPO_PUBLIC_GOOGLE_MAPS_API_KEY missing');
