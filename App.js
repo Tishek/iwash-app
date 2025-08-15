@@ -3,7 +3,7 @@ import 'react-native-reanimated';
 
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { View, Text, Animated, Dimensions, Alert, Linking, LogBox } from 'react-native';
+import { View, Text, Animated, Dimensions, Alert, Linking, LogBox, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaProvider, useSafeAreaInsets, initialWindowMetrics } from 'react-native-safe-area-context';
 import { openNavigationTo } from './src/utils/navigation';
@@ -20,7 +20,7 @@ import SearchControls from './src/components/SearchControls';
 import { createTranslator } from './src/i18n/strings';
 // import { fetchNearbyCarWashes } from './src/services/places';
 import TopBars from './src/components/TopBars';
-import BottomSheetContainer from './src/components/BottomSheetContainer';
+import BottomSheetPanel from './src/components/BottomSheetPanel';
 import MarkersLayer from './src/components/MarkersLayer';
 import { appStyles } from './src/styles/appStyles';
 import { useClustering } from './src/hooks/useClustering';
@@ -306,32 +306,34 @@ function AppInner() {
         log={(...args) => DEV_LOG('🟣 [renderCluster]', ...args)}
       />
 
-      <BottomSheetContainer
-        styles={styles}
-        P={P}
-        isDark={isDark}
-        t={t}
-        snapPoints={snapPoints}
-        sheetIndex={sheetIndex}
-        setSheetTopH={setSheetTopH}
-        filteredPlaces={filteredPlaces}
-        places={places}
-        radiusM={radiusM}
-        lastError={lastError}
-        loading={loading}
-        onSearchPress={triggerSearch}
-        filterMode={filterMode}
-        setFilterMode={setFilterMode}
-        listRef={listRef}
-        selectedId={selectedId}
-        settings={settings}
-        isFav={isFav}
-        toggleFav={toggleFav}
-        onNavigatePreferred={onNavigatePreferred}
-        openNavigation={openNavigation}
-        focusPlace={focusPlace}
-        onSheetIndexChange={handleSheetIndexChange}
-      />
+      <View style={[StyleSheet.absoluteFillObject, { zIndex: 1000 }]} pointerEvents="box-none">
+        <BottomSheetPanel
+          styles={styles}
+          P={P}
+          isDark={isDark}
+          t={t}
+          snapPoints={snapPoints}
+          sheetIndex={sheetIndex}
+          setSheetTopH={setSheetTopH}
+          filteredPlaces={filteredPlaces}
+          places={places}
+          radiusM={radiusM}
+          lastError={lastError}
+          loading={loading}
+          onSearchPress={triggerSearch}
+          filterMode={filterMode}
+          setFilterMode={setFilterMode}
+          listRef={listRef}
+          selectedId={selectedId}
+          settings={settings}
+          isFav={isFav}
+          toggleFav={toggleFav}
+          onNavigatePreferred={onNavigatePreferred}
+          openNavigation={openNavigation}
+          focusPlace={focusPlace}
+          onSheetIndexChange={handleSheetIndexChange}
+        />
+      </View>
 
       <SearchControls
         isExpanded={isExpanded}
