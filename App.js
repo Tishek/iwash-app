@@ -3,10 +3,9 @@ import 'react-native-reanimated';
 
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { View, Text, Animated, Dimensions, Alert, Linking, LogBox, StyleSheet } from 'react-native';
+import { View, Text, Animated, Dimensions, LogBox, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaProvider, useSafeAreaInsets, initialWindowMetrics } from 'react-native-safe-area-context';
-import { openNavigationTo } from './src/utils/navigation';
 import {
   ITEM_H, MIN_M, MAX_M, STEP_M,
   PIN_SELECTED_SCALE, PIN_ANCHOR_OFFSET_BASE,
@@ -113,7 +112,7 @@ function AppInner() {
   });
   // filtered places + selection
   const [filterMode, setFilterMode] = useState('ALL'); // ALL | CONTACT | NONCONTACT | FULLSERVICE | FAV
-  const { favorites, favoritesData, isFav, toggleFav } = useFavorites();
+  const { favoritesData, isFav } = useFavorites();
   // compute search center early so filtering can use it
   const searchCenter = useMemo(() => {
     if (settings.searchFrom === 'myLocation' && coords) return { latitude: coords.latitude, longitude: coords.longitude };
@@ -199,13 +198,6 @@ function AppInner() {
   // auto reload řeší hook usePlacesSearch
 
   // filtering handled via hook
-
-  const openNavigation = async (item, app) => openNavigationTo(item, app, t, Linking, Alert);
-
-  const onNavigatePreferred = (item) => {
-    const app = settings.preferredNav || 'google';
-    openNavigation(item, app);
-  };
 
   const { focusPlace, onMarkerPress } = usePlaceFocus({
     selectedId,
@@ -308,7 +300,6 @@ function AppInner() {
 
       <View style={[StyleSheet.absoluteFillObject, { zIndex: 1000 }]} pointerEvents="box-none">
         <BottomSheetPanel
-          styles={styles}
           P={P}
           isDark={isDark}
           t={t}
@@ -320,16 +311,10 @@ function AppInner() {
           radiusM={radiusM}
           lastError={lastError}
           loading={loading}
-          onSearchPress={triggerSearch}
           filterMode={filterMode}
           setFilterMode={setFilterMode}
           listRef={listRef}
           selectedId={selectedId}
-          settings={settings}
-          isFav={isFav}
-          toggleFav={toggleFav}
-          onNavigatePreferred={onNavigatePreferred}
-          openNavigation={openNavigation}
           focusPlace={focusPlace}
           onSheetIndexChange={handleSheetIndexChange}
         />
