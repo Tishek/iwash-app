@@ -5,6 +5,34 @@ import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import FiltersBar from './FiltersBar';
 
+const s = StyleSheet.create({
+  sheet: { zIndex: 0 },
+  sheetBackground: { borderTopLeftRadius: 16, borderTopRightRadius: 16 },
+  filtersContainer: { flexDirection: 'row', gap: 8, padding: 12 },
+  filterButton: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 12 },
+  filterButtonActive: { backgroundColor: 'rgba(56,116,255,0.2)' },
+  filterButtonInactive: { backgroundColor: 'rgba(127,127,127,0.12)' },
+  filterButtonTextDark: { color: '#fff' },
+  filterButtonTextLight: { color: '#111' },
+  listItem: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.06)',
+  },
+  listItemSelected: { backgroundColor: 'rgba(56,116,255,0.12)' },
+  listItemTitle: { fontWeight: '600' },
+  listItemTitleDark: { color: '#fff' },
+  listItemTitleLight: { color: '#111' },
+  listItemSubtitleDark: { color: '#cfcfcf' },
+  listItemSubtitleLight: { color: '#555' },
+  errorContainer: { padding: 16 },
+  errorText: { color: '#e95' },
+  emptyContainer: { padding: 16 },
+  emptyTextDark: { color: '#bbb' },
+  emptyTextLight: { color: '#666' },
+});
+
 // (zůstává) log při načtení modulu
 console.log('BottomSheetPanel file loaded');
 
@@ -74,19 +102,19 @@ export default function BottomSheetPanel({
     return (
       <TouchableOpacity
         onPress={() => focusPlace?.(item)}
-        style={{
-          paddingVertical: 12,
-          paddingHorizontal: 16,
-          backgroundColor: selected ? 'rgba(56,116,255,0.12)' : 'transparent',
-          borderBottomWidth: 1,
-          borderBottomColor: 'rgba(255,255,255,0.06)',
-        }}
+        style={[s.listItem, selected && s.listItemSelected]}
       >
-        <Text style={{ color: isDark ? '#fff' : '#111', fontWeight: '600' }}>
+        <Text
+          style={[s.listItemTitle, isDark ? s.listItemTitleDark : s.listItemTitleLight]}
+        >
           {item?.name || t?.('unnamed') || 'Myčka'}
         </Text>
         {!!item?.vicinity && (
-          <Text style={{ color: isDark ? '#cfcfcf' : '#555' }}>{item.vicinity}</Text>
+          <Text
+            style={isDark ? s.listItemSubtitleDark : s.listItemSubtitleLight}
+          >
+            {item.vicinity}
+          </Text>
         )}
       </TouchableOpacity>
     );
@@ -101,13 +129,15 @@ export default function BottomSheetPanel({
         enablePanDownToClose={false}
         enableOverDrag={false}
         onChange={handleSheetChange}
-        style={{ zIndex: 0 }}
-        backgroundStyle={{
-          borderTopLeftRadius: 16,
-          borderTopRightRadius: 16,
-          backgroundColor: isDark ? '#16181c' : '#fff',
-        }}
-        handleIndicatorStyle={{ backgroundColor: isDark ? '#999' : '#ccc' }}
+        style={s.sheet}
+        backgroundStyle={[
+          s.sheetBackground,
+          { backgroundColor: isDark ? '#16181c' : '#fff' },
+        ]}
+        handleIndicatorStyle={[
+          s.handleIndicator,
+          { backgroundColor: isDark ? '#999' : '#ccc' },
+        ]}
       >
         <FiltersBar
           t={t}
@@ -115,11 +145,12 @@ export default function BottomSheetPanel({
           setFilterMode={setFilterMode}
           isDark={isDark}
           onLayout={handleTopBarLayout}
+          styles={s}
         />
 
         {lastError ? (
-          <View style={{ padding: 16 }}>
-            <Text style={{ color: '#e95' }}>{String(lastError)}</Text>
+          <View style={s.errorContainer}>
+            <Text style={s.errorText}>{String(lastError)}</Text>
           </View>
         ) : (
           <BottomSheetFlatList
@@ -129,9 +160,13 @@ export default function BottomSheetPanel({
             renderItem={renderItem}
             contentContainerStyle={{ paddingBottom: 24 + insets.bottom }}
             ListEmptyComponent={
-              <View style={{ padding: 16 }}>
-                <Text style={{ color: isDark ? '#bbb' : '#666' }}>
-                  {loading ? t?.('loading') || 'Načítám…' : t?.('noResults') || 'Nic nenalezeno'}
+              <View style={s.emptyContainer}>
+                <Text
+                  style={isDark ? s.emptyTextDark : s.emptyTextLight}
+                >
+                  {loading
+                    ? t?.('loading') || 'Načítám…'
+                    : t?.('noResults') || 'Nic nenalezeno'}
                 </Text>
               </View>
             }
