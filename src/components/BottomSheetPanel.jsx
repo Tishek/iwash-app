@@ -46,22 +46,22 @@ export default function BottomSheetPanel({
   }, []);
   console.count('BottomSheetPanel render');
 
-  const lastIndexRef = useRef(-1);
   useEffect(() => {
     if (!sheetRef.current) return;
-    if (lastIndexRef.current === sheetIndex) return;
-    lastIndexRef.current = sheetIndex;
+    if (sheetIndex === localIndex) return;
     try { sheetRef.current.snapToIndex(sheetIndex); } catch {}
     setLocalIndex(sheetIndex);
-  }, [sheetIndex]);
+  }, [sheetIndex, localIndex]);
 
   const handleSheetChange = useCallback(
     (index) => {
       setLocalIndex(index);
       try { Haptics.selectionAsync(); } catch {}
-      onSheetIndexChange?.(index);
+      if (index !== sheetIndex) {
+        onSheetIndexChange?.(index);
+      }
     },
-    [onSheetIndexChange]
+    [onSheetIndexChange, sheetIndex]
   );
 
   const topBarHRef = useRef(-1);
@@ -141,6 +141,7 @@ export default function BottomSheetPanel({
         index={sheetIndex}
         snapPoints={snapPoints}
         enablePanDownToClose={false}
+        enableOverDrag={false}
         onChange={handleSheetChange}
         style={{ zIndex: 0 }}
         backgroundStyle={{

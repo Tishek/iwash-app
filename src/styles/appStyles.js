@@ -99,7 +99,15 @@ export const appStyles = StyleSheet.create({
   clusterWrap: { minWidth: 34, height: 34, paddingHorizontal: 6, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: '#111', borderWidth: 3, borderColor: '#fff', shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
   clusterText: { color: '#fff', fontSize: 13, fontWeight: '900' },
 
-  quickChipsWrap: { position: 'absolute', right: 10, top: SCREEN_H * 0.28, gap: 8, zIndex: 6, alignItems: 'flex-end' },
+  quickChipsWrap: {
+    position: 'absolute',
+    right: 10,
+    top: SCREEN_H * 0.28,
+    gap: 8,
+    zIndex: 1100,
+    elevation: 12,
+    alignItems: 'flex-end',
+  },
   quickChip: { backgroundColor: '#0F172A', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 12 },
   quickChipActive: { backgroundColor: '#111' },
   quickChipTxt: { color: '#fff', fontSize: 12, fontWeight: '800' },
