@@ -139,8 +139,16 @@ function AppInner() {
   // cluster radius v pixelech – čím víc přiblíženo, tím menší radius
   const clusterRadiusPx = useClusterRadiusPx(region);
 
+  const snapPoints = useMemo(() => ['14%', '50%', '90%'], []);
+  const setIsExpanded = useCallback((expanded) => {
+    setSheetIndex(expanded ? 1 : 0);
+  }, []);
+  const isExpanded = sheetIndex > 0;
+  const isHalfExpanded = sheetIndex === 1;
+  const isFullyExpanded = sheetIndex === 2;
+
   // BottomSheet layout state
-  const { isExpanded, setIsExpanded, sheetH, sheetTopH, setSheetTopH, sheetTop } = useBottomSheet({
+  const { sheetTopH, setSheetTopH, sheetTop } = useBottomSheet({
     onAtTargetHeight: () => {
       if (pendingFocusCoordRef.current) {
         const coord = pendingFocusCoordRef.current;
@@ -157,8 +165,8 @@ function AppInner() {
         });
       }
     },
-    collapsedH: 110,
-    expandedMaxH: Math.min(420, SCREEN_H * 0.6),
+    snapPoints,
+    sheetIndex,
   });
 
   // Visible centering utilities (extract from hook)
@@ -300,10 +308,9 @@ function AppInner() {
         P={P}
         isDark={isDark}
         t={t}
-        sheetH={sheetH}
+        snapPoints={snapPoints}
+        sheetIndex={sheetIndex}
         setSheetTopH={setSheetTopH}
-        isExpanded={isExpanded}
-        setIsExpanded={setIsExpanded}
         filteredPlaces={filteredPlaces}
         places={places}
         radiusM={radiusM}
