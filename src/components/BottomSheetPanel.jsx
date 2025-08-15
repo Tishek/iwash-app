@@ -1,8 +1,9 @@
 import React, { useMemo, useRef, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetFlatList, useBottomSheet } from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAnimatedReaction, runOnJS } from 'react-native-reanimated';
 
 // (zůstává) log při načtení modulu
 console.log('BottomSheetPanel file loaded');
@@ -12,10 +13,9 @@ export default function BottomSheetPanel({
   P,
   isDark,
   t,
-  sheetH,
   setSheetTopH,
-  isExpanded,
-  setIsExpanded,
+  sheetIndex,
+  setSheetTop,
   filteredPlaces,
   places,
   radiusM,
@@ -35,7 +35,6 @@ export default function BottomSheetPanel({
   onSheetIndexChange,
 }) {
   const insets = useSafeAreaInsets();
-  const sheetRef = useRef(null);
   const snapPoints = useMemo(() => ['14%', '50%', '90%'], []);
 
   // DEBUG: mount/unmount + render počitadlo
@@ -45,26 +44,12 @@ export default function BottomSheetPanel({
   }, []);
   console.count('BottomSheetPanel render');
 
-  const lastIndexRef = useRef(-1);
-  useEffect(() => {
-    if (!sheetRef.current) return;
-    const target = isExpanded ? 1 : 0;
-    if (lastIndexRef.current === target) return; // už jsme tam
-    lastIndexRef.current = target;
-    try { sheetRef.current.snapToIndex(target); } catch {}
-  }, [isExpanded]);
-
   const handleSheetChange = useCallback(
     (index) => {
-      const expanded = index > 0;
-      // nastav jen když se opravdu liší → nevyvolávej smyčku
-      if (expanded !== isExpanded) {
-        setIsExpanded?.(expanded);
-        try { Haptics.selectionAsync(); } catch {}
-        onSheetIndexChange?.(index);
-      }
+      onSheetIndexChange?.(index);
+      try { Haptics.selectionAsync(); } catch {}
     },
-    [isExpanded, setIsExpanded, onSheetIndexChange]
+    [onSheetIndexChange]
   );
 
   const topBarHRef = useRef(-1);
@@ -79,6 +64,19 @@ export default function BottomSheetPanel({
     },
     [setSheetTopH]
   );
+
+  // report sheet top position to parent
+  const PositionWatcher = () => {
+    const { animatedPosition } = useBottomSheet();
+    useAnimatedReaction(
+      () => animatedPosition.value,
+      (v) => {
+        runOnJS(setSheetTop)?.(v);
+      },
+      [animatedPosition]
+    );
+    return null;
+  };
 
   const keyExtractor = (item) =>
     item?.place_id || item?.id || String(item?.reference || Math.random());
@@ -137,11 +135,10 @@ export default function BottomSheetPanel({
     </View>
   );
 
-    return (
+  return (
     <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
       <BottomSheet
-        ref={sheetRef}
-        index={0}
+        index={sheetIndex}
         snapPoints={snapPoints}
         enablePanDownToClose={false}
         onChange={handleSheetChange}
@@ -153,6 +150,7 @@ export default function BottomSheetPanel({
         }}
         handleIndicatorStyle={{ backgroundColor: isDark ? '#999' : '#ccc' }}
       >
+        <PositionWatcher />
         <FiltersBar />
 
         {lastError ? (

@@ -82,7 +82,6 @@ src/
 │   ├── useFilteredPlaces.js     # Filtrování dat
 │   ├── useFavorites.js          # Oblíbené
 │   ├── useSettings.js           # Persistovaná nastavení
-│   ├── useBottomSheet.js        # Stav bottom sheetu
 │   ├── useRadius.js             # Radius
 │   ├── usePinSelection.js       # Výběr pinu
 │   ├── usePlaceFocus.js         # Focus místa

@@ -4,8 +4,8 @@ import { ITEM_H, PIN_SELECTED_SCALE, TARGET_VISIBLE_SPAN_M } from '../utils/cons
 export function usePlaceFocus({
   selectedId,
   setSelectedId,
-  isExpanded,
-  setIsExpanded,
+  sheetIndex,
+  setSheetIndex,
   idToIndex,
   listRef,
   sheetTopH,
@@ -14,6 +14,7 @@ export function usePlaceFocus({
   pendingFocusCoordRef,
   pendingFocusScaleRef,
 }) {
+  const isExpanded = sheetIndex > 0;
   const scrollToItem = (idx) => {
     if (listRef.current == null || typeof idx !== 'number') return;
     try {
@@ -45,7 +46,7 @@ export function usePlaceFocus({
     } else {
       pendingFocusCoordRef.current = place.location;
       pendingFocusScaleRef.current = PIN_SELECTED_SCALE;
-      setIsExpanded(true);
+      setSheetIndex(1);
     }
   };
 
@@ -67,7 +68,7 @@ export function usePlaceFocus({
     } else {
       pendingFocusCoordRef.current = place.location || null;
       pendingFocusScaleRef.current = PIN_SELECTED_SCALE;
-      setIsExpanded(true);
+      setSheetIndex(1);
     }
 
     const idx = idToIndex[place.id];

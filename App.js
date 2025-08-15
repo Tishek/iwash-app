@@ -29,7 +29,6 @@ import { useLocationFollow } from './src/hooks/useLocationFollow';
 import { makeClusterPressHandler } from './src/utils/clusterHandlers';
 import { useVisibleCentering } from './src/hooks/useVisibleCentering';
 import { useThemePalette } from './src/hooks/useThemePalette';
-import { useBottomSheet } from './src/hooks/useBottomSheet';
 import { useRadius } from './src/hooks/useRadius';
 import { useFilteredPlaces } from './src/hooks/useFilteredPlaces';
 import { useAuraPulse } from './src/hooks/useAuraPulse';
@@ -82,6 +81,9 @@ function AppInner() {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sheetIndex, setSheetIndex] = useState(0);
+  const [sheetTopH, setSheetTopH] = useState(0);
+  const [sheetTop, setSheetTop] = useState(SCREEN_H);
+  const isExpanded = sheetIndex > 0;
 
   const { hasPermission, region, setRegion, coords, followMe, setFollowMe, disableFollow, recenter } = useLocationFollow({
     animateToRegionSafe,
@@ -139,27 +141,23 @@ function AppInner() {
   // cluster radius v pixelech – čím víc přiblíženo, tím menší radius
   const clusterRadiusPx = useClusterRadiusPx(region);
 
-  // BottomSheet layout state
-  const { isExpanded, setIsExpanded, sheetH, sheetTopH, setSheetTopH, sheetTop } = useBottomSheet({
-    onAtTargetHeight: () => {
-      if (pendingFocusCoordRef.current) {
-        const coord = pendingFocusCoordRef.current;
-        const scale = (pendingFocusScaleRef.current ?? 0);
-        requestAnimationFrame(() => {
-          moveMarkerToVisibleCenter(coord, {
-            zoomFactor: 0.7,
-            minDelta: 0.01,
-            pinScale: scale,
-            targetSpanM: TARGET_VISIBLE_SPAN_M,
-          });
-          pendingFocusCoordRef.current = null;
-          pendingFocusScaleRef.current = 0;
+  // handle pending focus once sheet opens
+  useEffect(() => {
+    if (sheetIndex > 0 && pendingFocusCoordRef.current) {
+      const coord = pendingFocusCoordRef.current;
+      const scale = pendingFocusScaleRef.current ?? 0;
+      requestAnimationFrame(() => {
+        moveMarkerToVisibleCenter(coord, {
+          zoomFactor: 0.7,
+          minDelta: 0.01,
+          pinScale: scale,
+          targetSpanM: TARGET_VISIBLE_SPAN_M,
         });
-      }
-    },
-    collapsedH: 110,
-    expandedMaxH: Math.min(420, SCREEN_H * 0.6),
-  });
+        pendingFocusCoordRef.current = null;
+        pendingFocusScaleRef.current = 0;
+      });
+    }
+  }, [sheetIndex, moveMarkerToVisibleCenter]);
 
   // Visible centering utilities (extract from hook)
   const { moveMarkerToVisibleCenter, centerLockRef } = useVisibleCentering({
@@ -174,16 +172,17 @@ function AppInner() {
     pinAnchorOffsetBase: PIN_ANCHOR_OFFSET_BASE,
   });
 
-  // sheetTop is maintained by useBottomSheet
+  // sheetTop is updated from BottomSheetPanel
 
   // Střed vyhledávání podle nastavení (výše kvůli filtru)
 
   // proxy spouštěč vyhledávání přes hook
-  const triggerSearch = () => searchHere(searchCenter, (focusCoord) => {
-    pendingFocusCoordRef.current = focusCoord;
-    pendingFocusScaleRef.current = 0;
-    setIsExpanded(true);
-  });
+  const triggerSearch = () =>
+    searchHere(searchCenter, (focusCoord) => {
+      pendingFocusCoordRef.current = focusCoord;
+      pendingFocusScaleRef.current = 0;
+      setSheetIndex(1);
+    });
 
   // auto reload řeší hook usePlacesSearch
 
@@ -199,8 +198,8 @@ function AppInner() {
   const { focusPlace, onMarkerPress } = usePlaceFocus({
     selectedId,
     setSelectedId,
-    isExpanded,
-    setIsExpanded,
+    sheetIndex,
+    setSheetIndex,
     idToIndex,
     listRef,
     sheetTopH,
@@ -300,10 +299,9 @@ function AppInner() {
         P={P}
         isDark={isDark}
         t={t}
-        sheetH={sheetH}
         setSheetTopH={setSheetTopH}
-        isExpanded={isExpanded}
-        setIsExpanded={setIsExpanded}
+        setSheetTop={setSheetTop}
+        sheetIndex={sheetIndex}
         filteredPlaces={filteredPlaces}
         places={places}
         radiusM={radiusM}
