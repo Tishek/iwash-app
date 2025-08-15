@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useCallback, useState } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet';
@@ -35,9 +35,6 @@ export default function BottomSheetPanel({
 }) {
   const insets = useSafeAreaInsets();
   const sheetRef = useRef(null);
-  const [localIndex, setLocalIndex] = useState(sheetIndex || 0);
-  const isHalfExpanded = localIndex === 1;
-  const isFullyExpanded = localIndex === 2;
 
   // DEBUG: mount/unmount + render počitadlo
   useEffect(() => {
@@ -46,22 +43,12 @@ export default function BottomSheetPanel({
   }, []);
   console.count('BottomSheetPanel render');
 
-  useEffect(() => {
-    if (!sheetRef.current) return;
-    if (sheetIndex === localIndex) return;
-    try { sheetRef.current.snapToIndex(sheetIndex); } catch {}
-    setLocalIndex(sheetIndex);
-  }, [sheetIndex, localIndex]);
-
   const handleSheetChange = useCallback(
     (index) => {
-      setLocalIndex(index);
       try { Haptics.selectionAsync(); } catch {}
-      if (index !== sheetIndex) {
-        onSheetIndexChange?.(index);
-      }
+      onSheetIndexChange?.(index);
     },
-    [onSheetIndexChange, sheetIndex]
+    [onSheetIndexChange]
   );
 
   const topBarHRef = useRef(-1);
