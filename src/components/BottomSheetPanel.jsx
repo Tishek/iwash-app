@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet';
@@ -12,10 +12,9 @@ export default function BottomSheetPanel({
   P,
   isDark,
   t,
-  sheetH,
+  snapPoints,
+  sheetIndex,
   setSheetTopH,
-  isExpanded,
-  setIsExpanded,
   filteredPlaces,
   places,
   radiusM,
@@ -36,7 +35,9 @@ export default function BottomSheetPanel({
 }) {
   const insets = useSafeAreaInsets();
   const sheetRef = useRef(null);
-  const snapPoints = useMemo(() => ['14%', '50%', '90%'], []);
+  const [localIndex, setLocalIndex] = useState(sheetIndex || 0);
+  const isHalfExpanded = localIndex === 1;
+  const isFullyExpanded = localIndex === 2;
 
   // DEBUG: mount/unmount + render počitadlo
   useEffect(() => {
@@ -48,23 +49,19 @@ export default function BottomSheetPanel({
   const lastIndexRef = useRef(-1);
   useEffect(() => {
     if (!sheetRef.current) return;
-    const target = isExpanded ? 1 : 0;
-    if (lastIndexRef.current === target) return; // už jsme tam
-    lastIndexRef.current = target;
-    try { sheetRef.current.snapToIndex(target); } catch {}
-  }, [isExpanded]);
+    if (lastIndexRef.current === sheetIndex) return;
+    lastIndexRef.current = sheetIndex;
+    try { sheetRef.current.snapToIndex(sheetIndex); } catch {}
+    setLocalIndex(sheetIndex);
+  }, [sheetIndex]);
 
   const handleSheetChange = useCallback(
     (index) => {
-      const expanded = index > 0;
-      // nastav jen když se opravdu liší → nevyvolávej smyčku
-      if (expanded !== isExpanded) {
-        setIsExpanded?.(expanded);
-        try { Haptics.selectionAsync(); } catch {}
-        onSheetIndexChange?.(index);
-      }
+      setLocalIndex(index);
+      try { Haptics.selectionAsync(); } catch {}
+      onSheetIndexChange?.(index);
     },
-    [isExpanded, setIsExpanded, onSheetIndexChange]
+    [onSheetIndexChange]
   );
 
   const topBarHRef = useRef(-1);
@@ -141,7 +138,7 @@ export default function BottomSheetPanel({
     <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
       <BottomSheet
         ref={sheetRef}
-        index={0}
+        index={sheetIndex}
         snapPoints={snapPoints}
         enablePanDownToClose={false}
         onChange={handleSheetChange}
