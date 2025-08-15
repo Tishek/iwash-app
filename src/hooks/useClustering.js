@@ -3,7 +3,6 @@ import { useCallback } from 'react';
 export function useClustering({
   insets,
   topUiBottomY,
-  isExpanded,
   sheetTop,
   screen,
   regionRef,
@@ -16,12 +15,12 @@ export function useClustering({
   const getClusterEdgePadding = useCallback(() => {
     const topSafe = insets?.top || 0;
     const topOcclusion = Math.max(topSafe, topUiBottomY);
-    const bottomOcclusionPx = isExpanded ? 110 /* SNAP_COLLAPSED fallback */ : (screen.height - sheetTop);
+    const bottomOcclusionPx = screen.height - sheetTop;
     const topPad = Math.max(16, topOcclusion + 16);
     const bottomPad = Math.max(16, bottomOcclusionPx + 16);
     const sidePad = 24;
     return { topPad, bottomPad, sidePad };
-  }, [insets?.top, topUiBottomY, isExpanded, sheetTop, screen.height]);
+  }, [insets?.top, topUiBottomY, sheetTop, screen.height]);
 
   const wait = (ms) => new Promise((res) => setTimeout(res, ms));
   const waitForUnlock = async (timeout = 1200, tick = 30) => {

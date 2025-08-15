@@ -7,7 +7,6 @@ export function useVisibleCentering({
   screen,
   region,
   regionRef,
-  isExpanded,
   animateToRegionSafe,
   pinAnchorOffsetBase,
 }) {
@@ -19,7 +18,7 @@ export function useVisibleCentering({
     const { zoomFactor = 0.7, minDelta = 0.01, targetSpanM = null, pinScale = 0, duration = 320 } = opts;
 
     const now = Date.now();
-    const key = `${Number(coord.latitude).toFixed(6)},${Number(coord.longitude).toFixed(6)}|${isExpanded ? 1 : 0}|${pinScale}`;
+    const key = `${Number(coord.latitude).toFixed(6)},${Number(coord.longitude).toFixed(6)}|${Math.round(sheetTop)}|${pinScale}`;
     if (moveMarkerToVisibleCenter._last && moveMarkerToVisibleCenter._last.key === key && now - moveMarkerToVisibleCenter._last.ts < 600) return;
     moveMarkerToVisibleCenter._last = { key, ts: now };
 

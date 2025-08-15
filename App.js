@@ -3,7 +3,7 @@ import 'react-native-reanimated';
 
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { View, Text, Animated, Dimensions, Alert, Linking, LogBox } from 'react-native';
+import { View, Text, Dimensions, Alert, Linking, LogBox } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaProvider, useSafeAreaInsets, initialWindowMetrics } from 'react-native-safe-area-context';
 import { openNavigationTo } from './src/utils/navigation';
@@ -19,9 +19,7 @@ import MainMapView from './src/components/MainMapView';
 import SearchControls from './src/components/SearchControls';
 import { createTranslator } from './src/i18n/strings';
 // import { fetchNearbyCarWashes } from './src/services/places';
-import TopBars from './src/components/TopBars';
 import BottomSheetContainer from './src/components/BottomSheetContainer';
-import MarkersLayer from './src/components/MarkersLayer';
 import { appStyles } from './src/styles/appStyles';
 import { useClustering } from './src/hooks/useClustering';
 import { usePinSelection } from './src/hooks/usePinSelection';
@@ -29,12 +27,10 @@ import { useLocationFollow } from './src/hooks/useLocationFollow';
 import { makeClusterPressHandler } from './src/utils/clusterHandlers';
 import { useVisibleCentering } from './src/hooks/useVisibleCentering';
 import { useThemePalette } from './src/hooks/useThemePalette';
-import { useBottomSheet } from './src/hooks/useBottomSheet';
 import { useRadius } from './src/hooks/useRadius';
 import { useFilteredPlaces } from './src/hooks/useFilteredPlaces';
 import { useAuraPulse } from './src/hooks/useAuraPulse';
 import { useClusterRadiusPx } from './src/hooks/useClusterRadiusPx';
-import ClusterRenderer from './src/components/ClusterRenderer';
 import { DEV_LOG, DEV_WARN, DEV_INFO, DEV_ERROR } from './src/utils/devlog';
 import { usePlacesSearch } from './src/hooks/usePlacesSearch';
 import { usePlaceFocus } from './src/hooks/usePlaceFocus';
@@ -140,26 +136,14 @@ function AppInner() {
   const clusterRadiusPx = useClusterRadiusPx(region);
 
   // BottomSheet layout state
-  const { isExpanded, setIsExpanded, sheetH, sheetTopH, setSheetTopH, sheetTop } = useBottomSheet({
-    onAtTargetHeight: () => {
-      if (pendingFocusCoordRef.current) {
-        const coord = pendingFocusCoordRef.current;
-        const scale = (pendingFocusScaleRef.current ?? 0);
-        requestAnimationFrame(() => {
-          moveMarkerToVisibleCenter(coord, {
-            zoomFactor: 0.7,
-            minDelta: 0.01,
-            pinScale: scale,
-            targetSpanM: TARGET_VISIBLE_SPAN_M,
-          });
-          pendingFocusCoordRef.current = null;
-          pendingFocusScaleRef.current = 0;
-        });
-      }
-    },
-    collapsedH: 110,
-    expandedMaxH: Math.min(420, SCREEN_H * 0.6),
-  });
+  const snapFractions = useMemo(() => [0.14, 0.5, 0.9], []);
+  const sheetTop = useMemo(() => {
+    const frac = snapFractions[sheetIndex] ?? snapFractions[0];
+    return SCREEN_H * (1 - frac);
+  }, [snapFractions, sheetIndex]);
+  const [sheetTopH, setSheetTopH] = useState(0);
+  const isExpanded = sheetIndex > 0;
+  const setIsExpanded = useCallback((exp) => setSheetIndex(exp ? 1 : 0), []);
 
   // Visible centering utilities (extract from hook)
   const { moveMarkerToVisibleCenter, centerLockRef } = useVisibleCentering({
@@ -169,12 +153,26 @@ function AppInner() {
     screen: { width: SCREEN_W, height: SCREEN_H },
     region,
     regionRef,
-    isExpanded,
     animateToRegionSafe,
     pinAnchorOffsetBase: PIN_ANCHOR_OFFSET_BASE,
   });
 
-  // sheetTop is maintained by useBottomSheet
+  useEffect(() => {
+    if (pendingFocusCoordRef.current && sheetIndex > 0) {
+      const coord = pendingFocusCoordRef.current;
+      const scale = pendingFocusScaleRef.current ?? 0;
+      requestAnimationFrame(() => {
+        moveMarkerToVisibleCenter(coord, {
+          zoomFactor: 0.7,
+          minDelta: 0.01,
+          pinScale: scale,
+          targetSpanM: TARGET_VISIBLE_SPAN_M,
+        });
+        pendingFocusCoordRef.current = null;
+        pendingFocusScaleRef.current = 0;
+      });
+    }
+  }, [sheetIndex, moveMarkerToVisibleCenter]);
 
   // Střed vyhledávání podle nastavení (výše kvůli filtru)
 
@@ -212,13 +210,10 @@ function AppInner() {
 
   // removed local wait utilities (handled inside hooks)
 
-  // Compute edge padding for cluster fit. When the sheet is expanded,
-  // we intentionally behave like the sheet was collapsed so the map
-  // fits clusters the same way in both states (prevents over-zooming out).
+  // Compute edge padding for cluster fit based on current sheet position
   const { getClusterEdgePadding, progressiveClusterZoom, collectCoordsFromBBox } = useClustering({
     insets,
     topUiBottomY,
-    isExpanded,
     sheetTop,
     screen: { width: SCREEN_W, height: SCREEN_H },
     regionRef,
@@ -300,7 +295,6 @@ function AppInner() {
         P={P}
         isDark={isDark}
         t={t}
-        sheetH={sheetH}
         setSheetTopH={setSheetTopH}
         isExpanded={isExpanded}
         setIsExpanded={setIsExpanded}
