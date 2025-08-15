@@ -2,9 +2,16 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
-export default function FiltersBar({ t, filterMode, setFilterMode, isDark, onLayout }) {
+export default function FiltersBar({
+  t,
+  filterMode,
+  setFilterMode,
+  isDark,
+  onLayout,
+  styles,
+}) {
   return (
-    <View onLayout={onLayout} style={{ flexDirection: 'row', gap: 8, padding: 12 }}>
+    <View onLayout={onLayout} style={styles.filtersContainer}>
       {[
         ['ALL', t?.('all') || 'Vše'],
         ['CONTACT', t?.('contact') || 'Kontaktní'],
@@ -20,15 +27,20 @@ export default function FiltersBar({ t, filterMode, setFilterMode, isDark, onLay
             } catch {}
             setFilterMode?.(key);
           }}
-          style={{
-            paddingVertical: 6,
-            paddingHorizontal: 12,
-            borderRadius: 12,
-            backgroundColor:
-              filterMode === key ? 'rgba(56,116,255,0.2)' : 'rgba(127,127,127,0.12)',
-          }}
+          style={[
+            styles.filterButton,
+            filterMode === key
+              ? styles.filterButtonActive
+              : styles.filterButtonInactive,
+          ]}
         >
-          <Text style={{ color: isDark ? '#fff' : '#111' }}>{label}</Text>
+          <Text
+            style={
+              isDark ? styles.filterButtonTextDark : styles.filterButtonTextLight
+            }
+          >
+            {label}
+          </Text>
         </TouchableOpacity>
       ))}
     </View>
