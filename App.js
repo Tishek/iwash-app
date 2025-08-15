@@ -82,6 +82,9 @@ function AppInner() {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sheetIndex, setSheetIndex] = useState(0);
+  const handleSheetIndexChange = useCallback((index) => {
+    setSheetIndex((prev) => (prev === index ? prev : index));
+  }, []);
 
   const { hasPermission, region, setRegion, coords, followMe, setFollowMe, disableFollow, recenter } = useLocationFollow({
     animateToRegionSafe,
@@ -327,7 +330,7 @@ function AppInner() {
         onNavigatePreferred={onNavigatePreferred}
         openNavigation={openNavigation}
         focusPlace={focusPlace}
-        onSheetIndexChange={setSheetIndex}
+        onSheetIndexChange={handleSheetIndexChange}
       />
 
       <SearchControls
