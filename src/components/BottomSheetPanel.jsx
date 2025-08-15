@@ -43,7 +43,6 @@ const s = StyleSheet.create({
 console.log('BottomSheetPanel file loaded');
 
 export default function BottomSheetPanel({
-  styles,
   P,
   isDark,
   t,
@@ -55,16 +54,10 @@ export default function BottomSheetPanel({
   radiusM,
   lastError,
   loading,
-  onSearchPress,
   filterMode,
   setFilterMode,
   listRef,
   selectedId,
-  settings,
-  isFav,
-  toggleFav,
-  onNavigatePreferred,
-  openNavigation,
   focusPlace,
   onSheetIndexChange,
 }) {
