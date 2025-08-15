@@ -18,31 +18,32 @@ export default function FiltersBar({
         ['NONCONTACT', t?.('noncontact') || 'Bezkontaktní'],
         ['FULLSERVICE', t?.('fullservice') || 'Full service'],
         ['FAV', t?.('favorites') || 'Oblíbené'],
-      ].map(([key, label]) => (
-        <TouchableOpacity
-          key={key}
-          onPress={() => {
-            try {
-              Haptics.selectionAsync();
-            } catch {}
-            setFilterMode?.(key);
-          }}
-          style={[
-            styles.filterButton,
-            filterMode === key
-              ? styles.filterButtonActive
-              : styles.filterButtonInactive,
-          ]}
-        >
-          <Text
-            style={
-              isDark ? styles.filterButtonTextDark : styles.filterButtonTextLight
-            }
+        ].map(([key, label], idx, arr) => (
+          <TouchableOpacity
+            key={key}
+            onPress={() => {
+              try {
+                Haptics.selectionAsync();
+              } catch {}
+              setFilterMode?.(key);
+            }}
+            style={[
+              styles.filterButton,
+              idx !== arr.length - 1 && styles.filterButtonSpacing,
+              filterMode === key
+                ? styles.filterButtonActive
+                : styles.filterButtonInactive,
+            ]}
           >
-            {label}
-          </Text>
-        </TouchableOpacity>
-      ))}
+            <Text
+              style={
+                isDark ? styles.filterButtonTextDark : styles.filterButtonTextLight
+              }
+            >
+              {label}
+            </Text>
+          </TouchableOpacity>
+        ))}
     </View>
   );
 }
