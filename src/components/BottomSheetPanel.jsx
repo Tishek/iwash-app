@@ -8,6 +8,12 @@ import FiltersBar from './FiltersBar';
 const s = StyleSheet.create({
   sheet: { zIndex: 0 },
   sheetBackground: { borderTopLeftRadius: 16, borderTopRightRadius: 16 },
+  handleIndicator: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    alignSelf: 'center',
+  },
   filtersContainer: { flexDirection: 'row', gap: 8, padding: 12 },
   filterButton: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 12 },
   filterButtonActive: { backgroundColor: 'rgba(56,116,255,0.2)' },
