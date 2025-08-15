@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import BottomSheet, { BottomSheetFlatList } from '@gorhom/bottom-sheet';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import FiltersBar from './FiltersBar';
 
 // (zůstává) log při načtení modulu
 console.log('BottomSheetPanel file loaded');
@@ -91,37 +92,7 @@ export default function BottomSheetPanel({
     );
   };
 
-  // Filtry (minimal)
-  const FiltersBar = () => (
-    <View
-      onLayout={handleTopBarLayout}
-      style={{ flexDirection: 'row', gap: 8, padding: 12 }}
-    >
-      {[
-        ['ALL', t?.('all') || 'Vše'],
-        ['CONTACT', t?.('contact') || 'Kontaktní'],
-        ['NONCONTACT', t?.('noncontact') || 'Bezkontaktní'],
-        ['FULLSERVICE', t?.('fullservice') || 'Full service'],
-        ['FAV', t?.('favorites') || 'Oblíbené'],
-      ].map(([key, label]) => (
-        <TouchableOpacity
-          key={key}
-          onPress={() => { try { Haptics.selectionAsync(); } catch {} setFilterMode?.(key); }}
-          style={{
-            paddingVertical: 6,
-            paddingHorizontal: 12,
-            borderRadius: 12,
-            backgroundColor:
-              filterMode === key ? 'rgba(56,116,255,0.2)' : 'rgba(127,127,127,0.12)',
-          }}
-        >
-          <Text style={{ color: isDark ? '#fff' : '#111' }}>{label}</Text>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
-
-    return (
+  return (
     <View style={StyleSheet.absoluteFillObject} pointerEvents="box-none">
       <BottomSheet
         ref={sheetRef}
@@ -138,7 +109,13 @@ export default function BottomSheetPanel({
         }}
         handleIndicatorStyle={{ backgroundColor: isDark ? '#999' : '#ccc' }}
       >
-        <FiltersBar />
+        <FiltersBar
+          t={t}
+          filterMode={filterMode}
+          setFilterMode={setFilterMode}
+          isDark={isDark}
+          onLayout={handleTopBarLayout}
+        />
 
         {lastError ? (
           <View style={{ padding: 16 }}>
