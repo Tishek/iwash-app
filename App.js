@@ -1,3 +1,6 @@
+import 'react-native-gesture-handler';
+import 'react-native-reanimated';
+
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { View, Text, Animated, Dimensions, Alert, Linking, LogBox } from 'react-native';
@@ -40,6 +43,7 @@ import { useSearchControls } from './src/hooks/useSearchControls';
 import { DebugProvider } from './src/debug/DebugProvider';
 import DebugOverlay from './src/debug/DebugOverlay';
 import { useDebug } from './src/debug/useDebug';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // i18n via helper
 
@@ -77,6 +81,7 @@ function AppInner() {
   const clusterZoomingRef = useRef(false);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [sheetIndex, setSheetIndex] = useState(0);
 
   const { hasPermission, region, setRegion, coords, followMe, setFollowMe, disableFollow, recenter } = useLocationFollow({
     animateToRegionSafe,
@@ -290,23 +295,6 @@ function AppInner() {
         log={(...args) => DEV_LOG('🟣 [renderCluster]', ...args)}
       />
 
-      <SearchControls
-        isExpanded={isExpanded}
-        isDark={isDark}
-        P={P}
-        loading={loading}
-        t={t}
-        styles={styles}
-        onTopLayout={registerTopOcclusion}
-        onOpenSettings={controls.openSettings}
-        onBrandLongPress={toggleOverlay}
-        radiusM={radiusM}
-        onAdjustRadius={controls.onAdjustRadius}
-        onSearchPress={controls.onSearchPress}
-        onRecenter={controls.onRecenter}
-        onCommitRadius={controls.onCommitRadius}
-      />
-
       <BottomSheetContainer
         styles={styles}
         P={P}
@@ -332,7 +320,27 @@ function AppInner() {
         onNavigatePreferred={onNavigatePreferred}
         openNavigation={openNavigation}
         focusPlace={focusPlace}
+        onSheetIndexChange={setSheetIndex}
       />
+
+      <SearchControls
+        isExpanded={isExpanded}
+        isDark={isDark}
+        P={P}
+        loading={loading}
+        t={t}
+        styles={styles}
+        onTopLayout={registerTopOcclusion}
+        onOpenSettings={controls.openSettings}
+        onBrandLongPress={toggleOverlay}
+        radiusM={radiusM}
+        onAdjustRadius={controls.onAdjustRadius}
+        onSearchPress={controls.onSearchPress}
+        onRecenter={controls.onRecenter}
+        onCommitRadius={controls.onCommitRadius}
+        sheetIndex={sheetIndex}
+      />
+
 
       <SettingsContainer
         visible={settingsOpen}
@@ -357,11 +365,13 @@ function AppInner() {
 
 export default function App() {
   return (
-    <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-      <DebugProvider>
-        <AppInner />
-      </DebugProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+        <DebugProvider>
+          <AppInner />
+        </DebugProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 const styles = appStyles;

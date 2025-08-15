@@ -9,6 +9,13 @@ export function usePlacesSearch({ t, API_KEY, settings, coords, radiusM, searchC
   const [lastError, setLastError] = useState(null);
   const autoReloadTimerRef = useRef(null);
 
+  // Diagnostics: confirm that API key is present (boolean only)
+  useEffect(() => {
+    try {
+      console.log('[usePlacesSearch] hasKey:', Boolean(API_KEY));
+    } catch {}
+  }, [API_KEY]);
+
   const searchHere = useCallback(async (searchCenter, onBeforeExpand) => {
     if (!API_KEY) {
       Alert.alert(t('common.missingKeyTitle'), t('common.missingKeyBody'));
@@ -21,6 +28,16 @@ export function usePlacesSearch({ t, API_KEY, settings, coords, radiusM, searchC
       setLoading(true);
       setLastError(null);
 
+      // Diagnostics: what we are about to fetch
+      try {
+        console.log('[usePlacesSearch] searchHere →', {
+          lat: searchCenter.latitude,
+          lng: searchCenter.longitude,
+          radiusM,
+          hasKey: Boolean(API_KEY),
+        });
+      } catch {}
+
       const items = await fetchNearbyCarWashes({ searchCenter, radiusM });
       setPlaces(items);
 
@@ -30,8 +47,10 @@ export function usePlacesSearch({ t, API_KEY, settings, coords, radiusM, searchC
 
       onBeforeExpand?.(focusCoord);
     } catch (e) {
-      setLastError(String(e.message || e));
-      Alert.alert(t('common.loadErrorTitle'), String(e.message || e));
+      const msg = String(e?.message || e);
+      setLastError(msg);
+      try { console.warn('[usePlacesSearch] search error →', msg); } catch {}
+      Alert.alert(t('common.loadErrorTitle'), msg);
     } finally {
       setLoading(false);
     }
@@ -44,6 +63,7 @@ export function usePlacesSearch({ t, API_KEY, settings, coords, radiusM, searchC
     if (!API_KEY) return;
     if (autoReloadTimerRef.current) clearTimeout(autoReloadTimerRef.current);
     autoReloadTimerRef.current = setTimeout(() => {
+      try { console.log('[usePlacesSearch] autoReload tick'); } catch {}
       if (!loading) searchHere(searchCenter);
     }, 550);
     return () => {
@@ -53,5 +73,3 @@ export function usePlacesSearch({ t, API_KEY, settings, coords, radiusM, searchC
 
   return { places, setPlaces, loading, lastError, setLastError, autoReloadTimerRef, searchHere };
 }
-
-

@@ -1,61 +1,15 @@
 import React from 'react';
-import * as Haptics from 'expo-haptics';
-import BottomSheetPanel from './BottomSheetPanel';
+import { View, StyleSheet } from 'react-native';
+import BottomSheetPanel from './BottomSheetPanel.jsx'; // nebo './BottomSheetPanel.jsx' pokud je soubor s příponou
 
-export default function BottomSheetContainer({
-  styles,
-  P,
-  isDark,
-  t,
-  sheetH,
-  setSheetTopH,
-  isExpanded,
-  setIsExpanded,
-  filteredPlaces,
-  places,
-  radiusM,
-  lastError,
-  loading,
-  onSearchPress,
-  filterMode,
-  setFilterMode,
-  listRef,
-  selectedId,
-  settings,
-  isFav,
-  toggleFav,
-  onNavigatePreferred,
-  openNavigation,
-  focusPlace,
-}) {
+console.log('BottomSheetContainer file loaded');
+
+export default function BottomSheetContainer({ onSheetIndexChange, ...rest }) {
+  console.count('BottomSheetContainer render');
   return (
-    <BottomSheetPanel
-      styles={styles}
-      P={P}
-      isDark={isDark}
-      t={t}
-      sheetH={sheetH}
-      setSheetTopH={setSheetTopH}
-      isExpanded={isExpanded}
-      setIsExpanded={() => { try { Haptics.selectionAsync(); } catch {} setIsExpanded(prev => !prev); }}
-      filteredPlaces={filteredPlaces}
-      places={places}
-      radiusM={radiusM}
-      lastError={lastError}
-      loading={loading}
-      onSearchPress={onSearchPress}
-      filterMode={filterMode}
-      setFilterMode={(key)=>{ try { Haptics.selectionAsync(); } catch {} setFilterMode(key); }}
-      listRef={listRef}
-      selectedId={selectedId}
-      settings={settings}
-      isFav={isFav}
-      toggleFav={toggleFav}
-      onNavigatePreferred={onNavigatePreferred}
-      openNavigation={openNavigation}
-      focusPlace={focusPlace}
-    />
+    // Wrapper přes celou obrazovku a nad mapou/ovladači
+    <View style={[StyleSheet.absoluteFillObject, { zIndex: 1000 }]} pointerEvents="box-none">
+      <BottomSheetPanel {...rest} onSheetIndexChange={onSheetIndexChange} />
+    </View>
   );
 }
-
-

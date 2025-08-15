@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, TouchableOpacity, Text } from 'react-native';
 
-export default function QuickRadiusChips({ radiusM, commitRadius, styles, t }) {
+export default function QuickRadiusChips({ sheetIndex = 0, radiusM, commitRadius, styles, t }) {
+  if (sheetIndex === 2) return null; // hide only when sheet is fully expanded
+
   return (
     <View pointerEvents="box-none" style={styles.quickChipsWrap}>
       {[{ km: 0.5 }, { km: 1 }, { km: 3 }, { km: 5 }].map(({ km }) => {
@@ -23,5 +25,3 @@ export default function QuickRadiusChips({ radiusM, commitRadius, styles, t }) {
     </View>
   );
 }
-
-

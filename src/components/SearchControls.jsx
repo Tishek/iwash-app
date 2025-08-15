@@ -1,10 +1,11 @@
 import React from 'react';
+import { View, StyleSheet } from 'react-native';
 import TopBars from './TopBars';
 import RadiusDock from './RadiusDock';
 import QuickRadiusChips from './QuickRadiusChips';
 
 export default function SearchControls({
-  isExpanded,
+  sheetIndex, // 0: collapsed, 1: mid, 2: expanded
   isDark,
   P,
   loading,
@@ -20,7 +21,7 @@ export default function SearchControls({
   onCommitRadius,
 }) {
   return (
-    <>
+    <View style={stylesRoot.container} pointerEvents="box-none">
       <TopBars
         isDark={isDark}
         P={P}
@@ -32,7 +33,7 @@ export default function SearchControls({
         onBrandLongPress={onBrandLongPress}
       />
 
-      {!isExpanded && (
+      {sheetIndex === 0 && (
         <RadiusDock
           isDark={isDark}
           P={P}
@@ -46,14 +47,26 @@ export default function SearchControls({
         />
       )}
 
-      <QuickRadiusChips
-        radiusM={radiusM}
-        commitRadius={onCommitRadius}
-        styles={styles}
-        t={t}
-      />
-    </>
+      {(sheetIndex === 0 || sheetIndex === 1) && (
+        <QuickRadiusChips
+          sheetIndex={sheetIndex}
+          radiusM={radiusM}
+          commitRadius={onCommitRadius}
+          styles={styles}
+          t={t}
+        />
+      )}
+    </View>
   );
 }
 
-
+const stylesRoot = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    zIndex: 1000,
+  },
+});
