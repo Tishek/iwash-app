@@ -1,0 +1,147 @@
+// src/components/ListContent.jsx
+import React, { useCallback } from 'react';
+import { View, Text, FlatList } from 'react-native';
+import ListHeader from '../components/ListHeader';
+import FiltersRow from '../components/FiltersRow';
+import PlaceCard from '../components/PlaceCard.jsx';
+import { ITEM_H } from '../utils/constants';
+
+export default function ListContent({
+  styles,
+  P,
+  isDark,
+  t,
+  filteredPlaces,
+  places,
+  radiusM,
+  lastError,
+  loading,
+  onSearchPress,
+  fromCache,
+  cacheTs,
+  filterMode,
+  setFilterMode,
+  listRef,
+  selectedId,
+  settings,
+  isFav,
+  toggleFav,
+  onNavigatePreferred,
+  openNavigation,
+  focusPlace,
+  setSheetTopH,
+}) {
+  // --- ČISTÉ JS FUNKCE (bez workletu) ---------------------------------------
+  // Pokud je budeš volat z workletu, použij: runOnJS(scrollToIndexJS)(i)
+  const scrollToIndexJS = useCallback(
+    (index) => {
+      const i = Math.max(0, Math.min(index ?? 0, Math.max(filteredPlaces.length - 1, 0)));
+      const offset = i * ITEM_H;
+      listRef?.current?.scrollToOffset?.({ offset, animated: true });
+    },
+    [filteredPlaces.length, listRef]
+  );
+
+  const scrollToOffsetJS = useCallback(
+    (offsetPx) => {
+      const offset = Math.max(0, offsetPx ?? 0);
+      listRef?.current?.scrollToOffset?.({ offset, animated: true });
+    },
+    [listRef]
+  );
+  // --------------------------------------------------------------------------
+
+  const onHeaderLayout = useCallback(
+    (e) => setSheetTopH?.(e.nativeEvent.layout.height),
+    [setSheetTopH]
+  );
+
+  const onScrollToIndexFailed = useCallback(
+    (info) => {
+      // Fallback – někdy FlatList index ještě nemá změřené layouty
+      const safeIndex = Math.max(
+        0,
+        Math.min(info?.index ?? 0, Math.max(filteredPlaces.length - 1, 0))
+      );
+      scrollToOffsetJS(safeIndex * ITEM_H);
+    },
+    [filteredPlaces.length, scrollToOffsetJS]
+  );
+
+  return (
+    <>
+      <View onLayout={onHeaderLayout}>
+        <ListHeader
+          P={P}
+          t={t}
+          isDark={isDark}
+          radiusM={radiusM}
+          filteredCount={filteredPlaces.length}
+          totalCount={places.length}
+          lastError={lastError}
+          loading={loading}
+          onSearchPress={onSearchPress}
+          fromCache={fromCache}
+          cacheTs={cacheTs}
+          styles={styles}
+        />
+
+        <FiltersRow
+          filterMode={filterMode}
+          setFilterMode={setFilterMode}
+          isDark={isDark}
+          P={P}
+          styles={styles}
+          t={t}
+        />
+      </View>
+
+      <View style={styles.sheetBody}>
+        {filteredPlaces.length === 0 ? (
+          <Text style={[styles.placeholder, { color: P.textMute }]}>
+            {t('empty')}
+          </Text>
+        ) : (
+          <>
+            <FlatList
+              ref={listRef}
+              style={{ flex: 1 }}
+              data={filteredPlaces}
+              keyExtractor={(item) => item.id}
+              ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+              contentContainerStyle={{ paddingBottom: 100 }}
+              keyboardShouldPersistTaps="handled"
+              bounces={false}
+              scrollEventThrottle={16}
+              nestedScrollEnabled
+              getItemLayout={(_, index) => ({
+                length: ITEM_H,
+                offset: ITEM_H * index,
+                index,
+              })}
+              onScrollToIndexFailed={onScrollToIndexFailed}
+              renderItem={({ item, index }) => {
+                return (
+                  <PlaceCard
+                    item={item}
+                    index={index}
+                    selected={selectedId === item.id}
+                    isDark={isDark}
+                    P={P}
+                    settings={settings}
+                    isFav={isFav}
+                    toggleFav={toggleFav}
+                    onNavigatePreferred={onNavigatePreferred}
+                    openNavigation={openNavigation}
+                    focusPlace={focusPlace}
+                    t={t}
+                  />
+                );
+              }}
+            />
+          </>
+        )}
+      </View>
+    </>
+  );
+}

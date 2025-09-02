@@ -1,0 +1,71 @@
+{
+  "cli": {
+    "version": ">= 16.17.4",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development-simulator": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "channel": "development",
+      "ios": { "simulator": true },
+      "android": { "buildType": "apk" }
+    },
+
+    "internal": {
+      "distribution": "internal",
+      "channel": "internal",
+      "ios": { "simulator": false },
+      "android": { "buildType": "apk" }
+    },
+
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview",
+      "ios": { "simulator": false },
+      "android": { "buildType": "apk" }
+    },
+
+    "testflight": {
+      "autoIncrement": true,
+      "distribution": "store",
+      "channel": "testflight",
+      "ios": { "simulator": false },
+      "android": { "buildType": "apk" }
+    },
+
+    "production": {
+      "autoIncrement": true,
+      "distribution": "store",
+      "channel": "production",
+      "ios": { "simulator": false },
+      "android": { "buildType": "app-bundle" }
+    }
+  },
+  "submit": {
+    "testflight": {
+      "ios": {
+        "ascAppId": "6749898083",
+        "ascApiKeyId": "4HH2UCTMVZ",
+        "ascApiKeyIssuerId": "9ebffb3b-2f2b-4cec-ab6d-b7e00c3c6f47",
+        "ascApiKeyPath": "./ios/keys/AuthKey_4HH2UCTMVZ.p8"
+      },
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
+    },
+    "production": {
+      "ios": {
+        "ascAppId": "6749898083",
+        "ascApiKeyId": "4HH2UCTMVZ",
+        "ascApiKeyIssuerId": "9ebffb3b-2f2b-4cec-ab6d-b7e00c3c6f47",
+        "ascApiKeyPath": "./ios/keys/AuthKey_4HH2UCTMVZ.p8"
+      },
+      "android": {
+        "track": "production",
+        "releaseStatus": "completed"
+      }
+    }
+  }
+}
