@@ -96,6 +96,38 @@ export const appStyles = StyleSheet.create({
   sheetBody: { flex: 1, paddingHorizontal: 16, paddingVertical: 8 },
   placeholder: { fontSize: 14 },
 
+  // ---- List cards ----
+  card: {
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    paddingRight: 96, // rezerva pro pravý navigační pill v overlayi
+    borderRadius: 14,
+    marginBottom: 8,
+  },
+  cardTitle: { fontSize: 15, fontWeight: '800' },
+  cardSub: { marginTop: 4, fontSize: 12 },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  cardMeta: { fontSize: 11, fontWeight: '800' },
+
+  badgeRow: { flexDirection: 'row', gap: 6, marginTop: 6 },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 },
+  badgeTxt: { fontSize: 11, fontWeight: '800' },
+
+  favBtn: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+  favIcon: { color: '#A3AEC2', fontSize: 18, fontWeight: '900' },
+  favIconActive: { color: '#94A3B8' },
+
+  openBadge: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  openDot: { width: 8, height: 8, borderRadius: 4 },
+
+  navRow: { position: 'absolute', right: 12, bottom: 8, flexDirection: 'row', gap: 6 },
+  navBtn: { backgroundColor: '#111', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12 },
+  navTxt: { color: '#fff', fontSize: 11, fontWeight: '900' },
+  navBigBtn: { backgroundColor: '#111', paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12 },
+  navBigTxt: { color: '#fff', fontSize: 13, fontWeight: '900' },
+  navMoreBtn: { backgroundColor: '#111', paddingHorizontal: 10, paddingVertical: 8, borderRadius: 12 },
+  navMoreTxt: { color: '#fff', fontSize: 18, fontWeight: '900', lineHeight: 18 },
+
   clusterWrap: { minWidth: 34, height: 34, paddingHorizontal: 6, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: '#111', borderWidth: 3, borderColor: '#fff', shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 6, shadowOffset: { width: 0, height: 2 } },
   clusterText: { color: '#fff', fontSize: 13, fontWeight: '900' },
 
@@ -160,5 +192,3 @@ export const appStyles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
-

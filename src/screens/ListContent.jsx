@@ -108,35 +108,39 @@ export default function ListContent({
               style={{ flex: 1 }}
               data={filteredPlaces}
               keyExtractor={(item) => item.id}
-              ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
-              contentContainerStyle={{ paddingBottom: 100 }}
+              ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+              contentContainerStyle={{ paddingBottom: 72 }}
               keyboardShouldPersistTaps="handled"
               bounces={false}
               scrollEventThrottle={16}
               nestedScrollEnabled
-              getItemLayout={(_, index) => ({
-                length: ITEM_H,
-                offset: ITEM_H * index,
-                index,
-              })}
+              initialNumToRender={8}
+              windowSize={7}
+              maxToRenderPerBatch={8}
+              removeClippedSubviews
               onScrollToIndexFailed={onScrollToIndexFailed}
               renderItem={({ item, index }) => {
-                return (
-                  <PlaceCard
-                    item={item}
-                    index={index}
-                    selected={selectedId === item.id}
-                    isDark={isDark}
-                    P={P}
-                    settings={settings}
-                    isFav={isFav}
-                    toggleFav={toggleFav}
-                    onNavigatePreferred={onNavigatePreferred}
-                    openNavigation={openNavigation}
-                    focusPlace={focusPlace}
-                    t={t}
-                  />
-                );
+                try {
+                  return (
+                    <PlaceCard
+                      item={item}
+                      index={index}
+                      selected={selectedId === item.id}
+                      isDark={isDark}
+                      P={P}
+                      settings={settings}
+                      isFav={isFav}
+                      toggleFav={toggleFav}
+                      onNavigatePreferred={onNavigatePreferred}
+                      openNavigation={openNavigation}
+                      focusPlace={focusPlace}
+                      t={t}
+                    />
+                  );
+                } catch (e) {
+                  // Defensive: pokud by selhala renderItem, přeskočíme položku
+                  return null;
+                }
               }}
             />
           </>

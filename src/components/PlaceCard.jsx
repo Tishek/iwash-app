@@ -3,7 +3,7 @@ import { TouchableOpacity, View, Text, Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { appStyles as styles } from '../styles/appStyles';
 
-export default function PlaceCard({
+function PlaceCard({
   item,
   selected,
   isDark,
@@ -138,35 +138,14 @@ export default function PlaceCard({
 
       {/* Navigační tlačítka */}
       <View style={styles.navRow}>
-        {settings.preferredNav && settings.preferredNav !== 'ask' ? (
-          <>
-            <TouchableOpacity
-              onPress={() => onNavigatePreferred(item)}
-              style={styles.navBigBtn}
-              accessibilityLabel={tt('a11y.navigate', 'Navigate')}
-            >
-              <Text style={styles.navBigTxt}>{tt('btn.navigate', 'Navigate')}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => {
-                Alert.alert(
-                  tt('nav.otherApp', 'Open in another app'),
-                  tt('nav.chooseApp', 'Choose an app'),
-                  [
-                    { text: tt('nav.apple', 'Apple'), onPress: () => openNavigation(item, 'apple') },
-                    { text: tt('nav.google', 'Google'), onPress: () => openNavigation(item, 'google') },
-                    { text: tt('nav.waze', 'Waze'), onPress: () => openNavigation(item, 'waze') },
-                    { text: tt('common.cancel', 'Cancel'), style: 'cancel' },
-                  ]
-                );
-              }}
-              style={styles.navMoreBtn}
-              accessibilityLabel={tt('a11y.moreNavOptions', 'More navigation options')}
-            >
-              <Text style={styles.navMoreTxt}>⋯</Text>
-            </TouchableOpacity>
-          </>
+        {settings?.preferredNav && settings.preferredNav !== 'ask' ? (
+          <TouchableOpacity
+            onPress={() => onNavigatePreferred(item)}
+            style={styles.navBtn}
+            accessibilityLabel={tt('a11y.navigate', 'Navigate')}
+          >
+            <Text style={styles.navTxt}>{tt('btn.navigate', 'Navigovat')}</Text>
+          </TouchableOpacity>
         ) : (
           <>
             <TouchableOpacity
@@ -196,3 +175,17 @@ export default function PlaceCard({
     </TouchableOpacity>
   );
 }
+
+export default React.memo(PlaceCard, (prev, next) => {
+  // Rerender jen když se změní identita položky, výběr, nebo relevantní vizuální props
+  return (
+    prev.item?.id === next.item?.id &&
+    prev.selected === next.selected &&
+    prev.isDark === next.isDark &&
+    prev.P?.bg === next.P?.bg &&
+    prev.P?.text === next.P?.text &&
+    prev.P?.textMute === next.P?.textMute &&
+    prev.settings?.preferredNav === next.settings?.preferredNav &&
+    prev.isFav?.(prev.item?.id) === next.isFav?.(next.item?.id)
+  );
+});

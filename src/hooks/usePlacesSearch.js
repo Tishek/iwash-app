@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { fetchNearbyCarWashes } from '../services/places';
+import { DEV_INFO } from '../utils/devlog';
 import { GOOGLE_MAPS_API_KEY } from '../utils/config';
 import { CACHE_ENABLED, CACHE_TTL_MS } from '../utils/constants';
 import { makeCacheKey, readCache, writeCache, isFresh } from '../utils/cache';
@@ -108,7 +109,7 @@ export function usePlacesSearch({
           } catch {}
         }
 
-        console.log('[places] fetched', items.length);
+        DEV_INFO('[places] fetched', items.length);
 
         const focusCoord =
           settings.searchFrom === 'myLocation' && coords
@@ -125,7 +126,7 @@ export function usePlacesSearch({
            } catch (err) {
              // Neshoď vyhledávání kvůli UI chybě; jen zaloguj
              console.warn('[places] onBeforeExpand failed:', String(err?.message ?? err));
-             console.log('[places] fetch error:', e);
+             DEV_INFO('[places] fetch error:', e);
            }
          }
       } catch (e) {
@@ -185,7 +186,7 @@ export function usePlacesSearch({
   useEffect(() => () => clearTimers(), []);
 
   useEffect(() => {
-    console.log(
+    DEV_INFO(
       '[places] Loaded API key ends with:',
       apiKey ? String(apiKey).slice(-6) : 'MISSING'
     );

@@ -1,6 +1,6 @@
 # iWash – vyhledávač myček aut 🚗🧼
 
-Pokročilá aplikace v **React Native (Expo)**, která pomáhá najít myčky aut v okolí. Nabízí chytré filtrování, klastrování pinů, dvojjazyčné rozhraní (CS/EN) a rychlé spuštění navigace do vybraného místa.
+Pokročilá aplikace v **React Native (Expo)**, která pomáhá najít myčky aut v okolí. Nabízí chytré filtrování, klastrování pinů, dvojjazyčné rozhraní (CS/EN) a rychlé spuštění navigace do vybraného místa. Nově obsahuje vylepšený debug overlay, optimalizace výkonu a stabilnější chování při filtrování a práci se seznamem.
 
 ---
 
@@ -19,6 +19,7 @@ Pokročilá aplikace v **React Native (Expo)**, která pomáhá najít myčky au
 - **Inteligentní odvozování typu** s možností manuální úpravy  
 - **Řazení podle vzdálenosti** (nejbližší první)  
 - **Paginace** přes `next_page_token`  
+ - Odolnost proti chybám při přepínání filtrů (fallbacky a logování)
 
 ### 📍 Mapové prvky
 - **Klastrování pinů** pro přehlednost  
@@ -26,13 +27,16 @@ Pokročilá aplikace v **React Native (Expo)**, která pomáhá najít myčky au
 - Přepínání **sledování polohy** ↔ **manuální ovládání**  
 - **Zaměřovací kříž** při hledání ze středu mapy  
 - **Aura/pulse** efekt pro vizuální odezvu  
+ - Posun vybraného pinu do viditelné části mapy i při otevřeném listu  
+ - Krátkodobé „miznutí pinů“ omezeno cache‑fallbackem při re‑renderu
 
 ### 📱 Uživatelské rozhraní
 - **Bottom sheet** s rozbalitelným seznamem  
-- **Rychlé čipy radiusu** a **dok** se sliderem  
+- **Rychlé čipy radiusu** a **dok** se sliderem (s plynulým fade přechodem)  
 - **Světlé/Tmavé** téma (systém/ručně/force)  
 - **CZ/EN** překlady  
 - **Haptická** odezva  
+ - Kompaktní karty míst; preferovaná navigace zobrazuje 1 tlačítko „Navigovat“
 
 ### ⭐ Oblíbené & personalizace
 - Až **3 oblíbené** myčky (lokální uložení)  
@@ -42,6 +46,7 @@ Pokročilá aplikace v **React Native (Expo)**, která pomáhá najít myčky au
 ### 🧭 Navigace
 - **Jedno klepnutí** spustí navigaci  
 - **Fallback** při chybě preferované aplikace  
+ - Preferovaná aplikace (Apple/Google/Waze) – v seznamu zobrazeno jediné tlačítko „Navigovat“
 
 ---
 
@@ -121,15 +126,29 @@ src/
 - iOS Simulator / Android Emulator (volitelně) nebo fyzické zařízení s **Expo Go**
 
 ### Instalace
-`bash`
 `npm install`
 
-Konfigurace prostředí
+### Konfigurace prostředí (API klíče)
+V kořeni projektu je **.env** (ignorován ve `.gitignore`). Pro dev/staging si doplňte vlastní hodnoty:
 
-Vytvoř soubor .env v kořeni projektu:
-`EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=YOUR_GOOGLE_MAPS_API_KEY`
+```
+# Public (JS bundl) – HTTP volání Places API (platformově specifické)
+EXPO_PUBLIC_GOOGLE_MAPS_API_KEY_IOS=...
+EXPO_PUBLIC_GOOGLE_MAPS_API_KEY_ANDROID=...
+# Volitelně: společný fallback
+# EXPO_PUBLIC_GOOGLE_MAPS_API_KEY=...
 
-Na Google Cloud Console povol Places API a Maps JavaScript API a klíč ideálně omez na bundleIdentifier.
+# Native SDK (dlaždice v nativních buildech/dev client)
+IOS_MAPS_SDK_API_KEY=...
+ANDROID_MAPS_SDK_API_KEY=...
+```
+
+Co jsme zavedli:
+- `app.config.js` načítá `.env` (`import 'dotenv/config'`).
+- iOS: `ios.config.googleMapsApiKey`, Android: `android.config.googleMaps.apiKey`.
+- Runtime čte klíče platformově: `src/utils/config.js` (iOS/Android → `EXPO_PUBLIC_*`).
+
+V Google Cloud Console povolte „Places API“. SDK klíče omezte na bundleId / package + SHA‑1 (pro nativní buildy) a HTTP klíče na „Places API“.
 
 ### Spuštění
 #### Dev server
@@ -144,11 +163,18 @@ npx expo start --android
 #### Web (omezené funkce)
 npx expo start --web
 
+Poznámka: pokud se Expo Go nedaří připojit, použijte `--tunnel`.
+
+### Debugování a logy
+- Vlastní debug overlay otevřete dlouhým stiskem loga „iWash“.  
+- Overlay patchuje `console.*` jen když je otevřený. Výchozí úroveň logů je „warn“ – minimalizace pádu Expo Go vlivem velkého objemu logů.  
+- Pro vývoj použijte helpers: `DEV_WARN`, `DEV_ERROR` (info/log jsou vypnuté).
+
 ## 🔧 Vývoj & stack
 	•	Expo SDK 53, React Native 0.79.5, React 19
-	•	react-native-maps, react-native-map-clustering, @react-native-async-storage/async-storage, expo-location, expo-haptics
+	•	react-native-maps, rn-maps-clustering, @react-native-async-storage/async-storage, expo-location, expo-haptics
 	•	Stav: React hooky, perzistence: AsyncStorage
-	•	Výkon: klastrování, lazy loading, useMemo/useCallback, animace (Animated)
+	•	Výkon: memoizované položky listu a pinů, tuned FlatList, omezené logy, fallback pro piny při re-renderu
 
 ⸻
 
@@ -209,6 +235,22 @@ Ujisti se, že v eas.json máš profil production a (volitelně) vyplněnou sekc
     }
   }
 }`
+
+## 🧪 QA checklist (rychlý průchod)
+- Povolit/odepřít polohu → fallback na výchozí region (Praha).  
+- Vyhledávání: tlačítko Search, změny radiusu (dok + čipy), fade čipů při přechodu.  
+- Filtry: ALL/CONTACT/NONCONTACT/FULLSERVICE/FAV – bez pádů a s očekávanými počty.  
+- Seznam: tap na položku → pin v viditelné části mapy nad listem.  
+- Navigace: preferovaná appka zobrazuje pouze „Navigovat“.  
+- Stabilita: rychlé přepínání filtrů a scroll listu → bez pádů/blikání pinů.  
+
+## 📝 Poslední změny (highlights)
+- Platformové `EXPO_PUBLIC_*` klíče a nativní SDK klíče přes `.env` + `app.config.js`.  
+- Debug overlay patchuje konzoli jen při otevření, default `logLevel=warn`.  
+- Kompaktnější karty, preferovaná navigace = jedno tlačítko „Navigovat“.  
+- Plynulé mizení rychlých radius čipů.  
+- Posun pinu do viditelné části mapy i s otevřeným listem.  
+- Stabilita filtrů a listu (fallbacky, memo, tuned FlatList).  
 
 ## 🤝 Contributing
 	1.	Forkni repozitář

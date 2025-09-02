@@ -30,7 +30,9 @@ export function useVisibleCentering({
     const topSafe = insets?.top || 0;
     const topOcclusion = Math.max(topSafe, topUiBottomY);
 
-    const visibleH = Math.max(1, sheetTop - topOcclusion);
+    // Fallback, když sheetTop není k dispozici (např. v Expo Go/IOS při UI změnách)
+    let sheetTopSafe = Number.isFinite(sheetTop) ? sheetTop : (isExpanded ? Math.round(screen.height * 0.55) : screen.height);
+    const visibleH = Math.max(1, sheetTopSafe - topOcclusion);
     const desiredCenterY = topOcclusion + visibleH / 2;
 
     const anchorOffsetPx = pinScale > 0 ? pinAnchorOffsetBase * pinScale : 0;
@@ -68,5 +70,4 @@ export function useVisibleCentering({
 
   return { moveMarkerToVisibleCenter, centerLockRef };
 }
-
 

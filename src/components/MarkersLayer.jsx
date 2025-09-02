@@ -70,6 +70,10 @@ export default function MarkersLayer({
     return places;
   }, [filteredPlaces]);
 
+  // Cache poslední render, aby při krátkém re-renderu (např. při změně filtru)
+  // nemizely všechny piny na 1 frame
+  const lastMarkersRef = React.useRef([]);
+
   // 🛠️ VRACÍME PŘÍMO POLE Markerů s error boundary protection
   const markers = React.useMemo(() => {
     try {
@@ -181,7 +185,8 @@ export default function MarkersLayer({
       }
 
       DEV_LOG(`[markers] Successfully created ${markerComponents.length} markers`);
-      return markerComponents;
+      if (markerComponents.length > 0) lastMarkersRef.current = markerComponents;
+      return markerComponents.length > 0 ? markerComponents : lastMarkersRef.current;
     } catch (error) {
       DEV_ERROR('[markers] Critical error in markers generation:', error);
       return [];

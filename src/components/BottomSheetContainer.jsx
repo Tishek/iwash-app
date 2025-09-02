@@ -2,6 +2,7 @@
 import React, { useMemo, useEffect, useRef } from 'react';
 import { StyleSheet, Platform, Dimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { DEV_INFO } from '../utils/devlog';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -74,9 +75,7 @@ export default function BottomSheetContainer(props) {
     [COLLAPSED_PX, HALF_PX, EXPANDED_PX]
   );
 
-  useEffect(() => {
-    console.log('[BS] points', points);
-  }, [points]);
+  useEffect(() => { DEV_INFO('[BS] points', points); }, [points]);
 
   // Shared values – jedna proměnná pro výšku sheetu
   const animatedY = useSharedValue(isExpanded ? points.HALF : points.COLLAPSED);
@@ -106,7 +105,7 @@ export default function BottomSheetContainer(props) {
   const animateToJS = (targetPx) => {
     if (isAnimatingRef.current) return;
     isAnimatingRef.current = true;
-    console.log('[BS] animateTo ->', Math.round(targetPx));
+    DEV_INFO('[BS] animateTo ->', Math.round(targetPx));
     animatedY.value = withTiming(targetPx, { duration: 220 }, (finished) => {
       if (finished) runOnJS(finishAnim)(targetPx);
       else runOnJS(() => { isAnimatingRef.current = false; })();
@@ -168,7 +167,7 @@ export default function BottomSheetContainer(props) {
   // Swipe-only: tap-toggle (funkční updater) ignorujeme
   const handleSetIsExpanded = (updater) => {
     if (typeof updater === 'function' && ENABLE_SWIPE) {
-      console.log('[BS] tap toggle ignored (swipe only)');
+      DEV_INFO('[BS] tap toggle ignored (swipe only)');
       return;
     }
     const currentExpanded = nameForPoint(animatedY.value) !== 'COLLAPSED';

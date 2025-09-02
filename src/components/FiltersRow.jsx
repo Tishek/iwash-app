@@ -1,4 +1,5 @@
 import React from 'react';
+import { DEV_ERROR, DEV_WARN } from '../utils/devlog';
 import { ScrollView, TouchableOpacity, Text } from 'react-native';
 
 export default function FiltersRow({ filterMode, setFilterMode, isDark, P, styles, t }) {
@@ -15,7 +16,10 @@ export default function FiltersRow({ filterMode, setFilterMode, isDark, P, style
       {buttons.map(btn => (
         <TouchableOpacity
           key={btn.key}
-          onPress={() => setFilterMode(btn.key)}
+          onPress={() => {
+            try { setFilterMode(btn.key); }
+            catch (e) { DEV_ERROR('[filters] setFilterMode failed:', e); }
+          }}
           style={[
             styles.filterBtn,
             { backgroundColor: (filterMode === btn.key) ? '#111' : (isDark ? '#0F1522' : '#F2F4F7'), borderColor: P.border, borderWidth: isDark ? 1 : 0 }
@@ -29,5 +33,4 @@ export default function FiltersRow({ filterMode, setFilterMode, isDark, P, style
     </ScrollView>
   );
 }
-
 

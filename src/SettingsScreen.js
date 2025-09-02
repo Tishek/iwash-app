@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Modal, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Slider from '@react-native-community/slider';
 import { MAX_FAVORITES } from './utils/constants';
 
@@ -101,6 +102,10 @@ export default function SettingsScreen({
     return (typeof cur === 'string') ? cur : (fallback ?? key);
   };
 
+  const insets = useSafeAreaInsets?.() || { bottom: 0 };
+  // Větší padding dole, aby poslední sekce (Vzhled) nebyla nalepená na spodní hranu
+  const bottomPad = Math.max(48, (insets?.bottom || 0) + 32);
+
   return (
     <Modal visible={!!visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <View style={[styles.settingsWrap, { backgroundColor: P?.bg }]}>
@@ -112,7 +117,7 @@ export default function SettingsScreen({
           </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={{ padding: 16 }}>
+        <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: bottomPad }}>
           {/* Search Center */}
           <View style={[styles.setGroup, { borderTopColor: P?.border, borderBottomColor: P?.border }]}> 
             <Text style={[styles.setGroupTitle, { color: P?.text }]}>{tr('searchCenter')}</Text>
@@ -283,7 +288,7 @@ export default function SettingsScreen({
             </View>
           </View>
 
-          <View style={{ height: 40 }} />
+          <View style={{ height: 8 }} />
         </ScrollView>
       </View>
     </Modal>

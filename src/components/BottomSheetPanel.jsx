@@ -104,7 +104,8 @@ const localStyles = StyleSheet.create({
     overflow: 'hidden',
   },
   contentWrap: {
-    // Sem můžeš dát paddingy/margins pro obsah listu
+    // Vyplň zbývající prostor pod hlavičkou, aby FlatList dostal výšku
+    flex: 1,
     paddingBottom: 8,
   },
   debugBanner: {

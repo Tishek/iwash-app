@@ -9,7 +9,7 @@ const MAX_LOGS = 250;
 export function DebugProvider({ children }) {
   const [showOverlay, setShowOverlay] = useState(false);
   const [captureConsole, setCaptureConsole] = useState(true);
-  const [logLevel, setLogLevel] = useState('info');
+  const [logLevel, setLogLevel] = useState('warn');
   const [logs, setLogs] = useState([]);
 
   const originalsRef = useRef({});
@@ -51,7 +51,8 @@ export function DebugProvider({ children }) {
   // Console patching (dev only) - with guard against re-patching
   useEffect(() => {
     if (!__DEV__) return;
-    if (!captureConsole) return;
+    // Capture pouze když je overlay otevřený a je to zapnuto
+    if (!captureConsole || !showOverlay) return;
     if (originalsRef.current.patched) return; // prevent re-patching
     
     const orig = {
@@ -95,7 +96,7 @@ export function DebugProvider({ children }) {
         originalsRef.current.patched = false;
       } catch {}
     };
-  }, [captureConsole]); // removed addLog dependency
+  }, [captureConsole, showOverlay]); // toggle by overlay visibility to reduce overhead
 
   const value = useMemo(() => ({
     showOverlay,
@@ -126,5 +127,3 @@ function stringifySafe(v) {
     try { return String(v); } catch { return '[unserializable]'; }
   }
 }
-
-

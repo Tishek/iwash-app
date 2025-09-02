@@ -77,29 +77,26 @@ export function usePlaceFocus({
 
     if (!place?.location) return;
 
-    if (selectedId === place.id && isExpanded) {
-      const idx = idToIndex[place.id];
-      callFromAnyThread(scheduleScrollJS, idx, 120);
-      return;
-    }
+    // Vždy posuň mapu – fallback v useVisibleCentering zajistí korektní viditelnost
+    moveMarkerToVisibleCenter(place.location, {
+      zoomFactor: 0.68,
+      minDelta: 0.01,
+      pinScale: PIN_SELECTED_SCALE,
+      targetSpanM: TARGET_VISIBLE_SPAN_M,
+    });
 
-    if (isExpanded) {
-      // tohle je normální JS funkce – ok
-      moveMarkerToVisibleCenter(place.location, {
-        zoomFactor: 0.65,
-        minDelta: 0.01,
-        pinScale: PIN_SELECTED_SCALE,
-        targetSpanM: TARGET_VISIBLE_SPAN_M,
-      });
-    } else {
-      // Nastav pending refy bezpečně z JS – nebalíme refy do worklet closure
+    // Připrav pending refy a případně rozbal list
+    if (!isExpanded) {
       callFromAnyThread((loc, scale) => setPendingFocusJS(loc, scale, pendingFocusCoordRef, pendingFocusScaleRef),
         place.location,
         PIN_SELECTED_SCALE
       );
-
       safeSetExpanded(true);
     }
+
+    // Scroll na položku
+    const idx = idToIndex[place.id];
+    callFromAnyThread(scheduleScrollJS, idx, isExpanded ? 120 : 320);
   };
 
   const onMarkerPress = (place) => {
@@ -112,19 +109,19 @@ export function usePlaceFocus({
       setSelectedId((prev) => (prev === p.id ? prev : p.id));
     }, place);
 
-    if (isExpanded) {
-      moveMarkerToVisibleCenter(place.location, {
-        zoomFactor: 0.7,
-        minDelta: 0.01,
-        pinScale: PIN_SELECTED_SCALE,
-        targetSpanM: TARGET_VISIBLE_SPAN_M,
-      });
-    } else {
+    // Posuň mapu vždy
+    moveMarkerToVisibleCenter(place.location, {
+      zoomFactor: 0.7,
+      minDelta: 0.01,
+      pinScale: PIN_SELECTED_SCALE,
+      targetSpanM: TARGET_VISIBLE_SPAN_M,
+    });
+
+    if (!isExpanded) {
       callFromAnyThread((loc, scale) => setPendingFocusJS(loc, scale, pendingFocusCoordRef, pendingFocusScaleRef),
         place.location,
         PIN_SELECTED_SCALE
       );
-
       safeSetExpanded(true);
     }
 
