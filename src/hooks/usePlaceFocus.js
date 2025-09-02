@@ -26,6 +26,13 @@ export function usePlaceFocus({
   pendingFocusCoordRef,
   pendingFocusScaleRef,
 }) {
+  // Stabilní JS helper – upraví pending refy mimo worklet kontext
+  const setPendingFocusJS = (loc, scale, coordRef, scaleRef) => {
+    try {
+      if (coordRef) coordRef.current = loc || null;
+      if (scaleRef) scaleRef.current = scale;
+    } catch {}
+  };
   // ---- ČISTĚ JS scroll funkce (bez workletu) -------------------------------
   const scrollToItemJS = (idx) => {
     if (listRef?.current == null || typeof idx !== 'number') return;
@@ -85,13 +92,11 @@ export function usePlaceFocus({
         targetSpanM: TARGET_VISIBLE_SPAN_M,
       });
     } else {
-      // práce s React refy jen na JS
-      callFromAnyThread((loc, scale) => {
-        runOnJS(() => {
-          if (pendingFocusCoordRef) pendingFocusCoordRef.current = loc;
-          if (pendingFocusScaleRef) pendingFocusScaleRef.current = scale;
-        })();
-      }, place.location, PIN_SELECTED_SCALE);
+      // Nastav pending refy bezpečně z JS – nebalíme refy do worklet closure
+      callFromAnyThread((loc, scale) => setPendingFocusJS(loc, scale, pendingFocusCoordRef, pendingFocusScaleRef),
+        place.location,
+        PIN_SELECTED_SCALE
+      );
 
       safeSetExpanded(true);
     }
@@ -115,12 +120,10 @@ export function usePlaceFocus({
         targetSpanM: TARGET_VISIBLE_SPAN_M,
       });
     } else {
-      callFromAnyThread((loc, scale) => {
-        runOnJS(() => {
-          if (pendingFocusCoordRef) pendingFocusCoordRef.current = loc || null;
-          if (pendingFocusScaleRef) pendingFocusScaleRef.current = scale;
-        })();
-      }, place.location, PIN_SELECTED_SCALE);
+      callFromAnyThread((loc, scale) => setPendingFocusJS(loc, scale, pendingFocusCoordRef, pendingFocusScaleRef),
+        place.location,
+        PIN_SELECTED_SCALE
+      );
 
       safeSetExpanded(true);
     }
