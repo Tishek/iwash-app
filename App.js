@@ -37,6 +37,7 @@ import { useTopOcclusion } from './src/hooks/useTopOcclusion';
 import { useSearchControls } from './src/hooks/useSearchControls';
 import { DebugProvider } from './src/debug/DebugProvider';
 import DebugOverlay from './src/debug/DebugOverlay';
+import { readTrace, clearTrace, breadcrumb } from './src/utils/crashTrace';
 import ErrorBoundary from './src/components/ErrorBoundary.jsx';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -49,6 +50,7 @@ try {
   // eslint-disable-next-line no-undef
   global.ErrorUtils?.setGlobalHandler?.((err, isFatal) => {
     try { console.error('[GlobalError]', isFatal ? 'FATAL' : 'non-fatal', err); } catch {}
+    try { breadcrumb('GlobalError', String(err?.message || err)); } catch {}
     if (typeof orig === 'function') { try { orig(err, isFatal); } catch {} }
   });
 } catch {}
@@ -57,6 +59,7 @@ try {
 try {
   const logRejection = (e) => {
     try { console.error('[UnhandledPromiseRejection]', e?.reason ?? e); } catch {}
+    try { breadcrumb('UnhandledPromiseRejection', String(e?.reason ?? e)); } catch {}
   };
   if (typeof globalThis.addEventListener === 'function') {
     globalThis.addEventListener('unhandledrejection', logRejection);
@@ -91,6 +94,20 @@ function AppInner() {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isSheetAnimating, setIsSheetAnimating] = useState(false);
+
+  // Vypiš logy z minulé session (pokud app předtím spadla) a pak je smaž
+  useEffect(() => {
+    (async () => {
+      try {
+        const trace = await readTrace();
+        if (trace?.items?.length) {
+          console.warn('[LastSessionTrace]', trace.items.length, 'events, last ts:', new Date(trace.ts).toISOString());
+          trace.items.forEach((it) => console.warn(`[trace:${it.type}]`, it.ts, it.payload));
+          await clearTrace();
+        }
+      } catch {}
+    })();
+  }, []);
 
   const {
     hasPermission, region, setRegion, coords, followMe, setFollowMe, disableFollow, recenter
@@ -267,12 +284,14 @@ function AppInner() {
   // Callbacks z BottomSheetu – pro pauzu fetchů a centrování po snapu
   const onSheetSnapStart = useCallback(() => {
     try { console.warn('[sheet] snap start'); } catch {}
+    try { breadcrumb('sheet_snap_start', {}); } catch {}
     setIsSheetAnimating(true);
   }, []);
 
   const onSheetSnapEnd = useCallback(({ name, targetPx, topY } = {}) => {
     setIsSheetAnimating(false);
     try { console.warn('[sheet] snap end ->', name, Math.round(targetPx || 0), 'topY:', Math.round(topY || 0)); } catch {}
+    try { breadcrumb('sheet_snap_end', { name, targetPx, topY }); } catch {}
     // Pokud čeká centrování na první klik, proveď ho nyní
     const coord = pendingFocusCoordRef.current;
     const scale = (pendingFocusScaleRef.current ?? 0);

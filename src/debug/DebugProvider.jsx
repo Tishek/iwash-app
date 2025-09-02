@@ -1,4 +1,5 @@
 import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { breadcrumb } from '../utils/crashTrace';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const DebugContext = createContext(null);
@@ -90,8 +91,8 @@ export function DebugProvider({ children }) {
       if (showOverlay && captureConsole) stableAddLog('info', ...args);
     };
     // warn/error vždy zapisujeme (kvůli pádům)
-    console.warn = (...args) => { try { orig.warn?.(...args); } catch {} stableAddLog('warn', ...args); };
-    console.error = (...args) => { try { orig.error?.(...args); } catch {} stableAddLog('error', ...args); };
+    console.warn = (...args) => { try { orig.warn?.(...args); } catch {} stableAddLog('warn', ...args); try { breadcrumb('warn', args.map(a => stringifySafe(a)).join(' ')); } catch {} };
+    console.error = (...args) => { try { orig.error?.(...args); } catch {} stableAddLog('error', ...args); try { breadcrumb('error', args.map(a => stringifySafe(a)).join(' ')); } catch {} };
     
     return () => {
       try {

@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomSheetPanel from './BottomSheetPanel';
-// no ITEM_H needed here
+import { breadcrumb } from '../utils/crashTrace';
 
 const ENABLE_SWIPE = true;       // swipe zapnutý
 const VELOCITY_SNAP = 900;
@@ -125,6 +125,7 @@ export default function BottomSheetContainer(props) {
     if (isAnimatingRef.current) return;
     isAnimatingRef.current = true;
     DEV_INFO('[BS] animateTo ->', Math.round(targetPx));
+    try { breadcrumb('sheet_animateTo', { targetPx }); } catch {}
     try { onSnapStart?.(); } catch {}
     animatedY.value = withTiming(targetPx, { duration: 220 }, (finished) => {
       if (finished) runOnJS(finishAnim)(targetPx);
@@ -143,6 +144,7 @@ export default function BottomSheetContainer(props) {
     .onBegin(() => {
       // Bezpečné volání JS callbacku: použij runOnJS pouze s JS funkcí
       if (onSnapStart) { try { runOnJS(onSnapStart)(); } catch {} }
+      try { runOnJS(() => breadcrumb('sheet_pan_begin', {}))(); } catch {}
       ctx.value = animatedY.value;
     })
     .onUpdate((e) => {
@@ -183,13 +185,17 @@ export default function BottomSheetContainer(props) {
 
   const handleSetFilterMode = (key) => {
     try { console.warn('[filters] click ->', key); } catch {}
+    try { breadcrumb('filter_click', key); } catch {}
     if (filterBusyRef.current) { try { console.warn('[filters] busy; skip'); } catch {} ; return; }
     filterBusyRef.current = true;
+    // Pokud je stejný mód, nedělej nic
+    if (key === filterMode) { filterBusyRef.current = false; return; }
     try { setSelectedId?.(null); } catch {}
     // drobná de-bounce, ať se mapové klastrování nepere s listem
     requestAnimationFrame(() => {
       try {
         console.warn('[filters] setFilterMode', key);
+        try { breadcrumb('filter_set', key); } catch {}
         setFilterMode?.(key);
       } catch (e) {
         try { console.error('[filters] setFilterMode failed:', e); } catch {}
