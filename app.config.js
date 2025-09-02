@@ -1,3 +1,4 @@
+import 'dotenv/config';
 export default ({ config }) => ({
   ...config,
   expo: {
@@ -20,12 +21,29 @@ export default ({ config }) => ({
     ios: {
       ...(config.expo?.ios || {}),
       bundleIdentifier: 'com.tishek.iwash',
+      config: {
+        ...(config.expo?.ios?.config || {}),
+        // Google Maps SDK for iOS (only needed if you switch provider to Google)
+        googleMapsApiKey: process.env.IOS_MAPS_SDK_API_KEY,
+      },
       infoPlist: {
         ...(config.expo?.ios?.infoPlist || {}),
         CFBundleDisplayName: 'iWash',
         NSLocationWhenInUseUsageDescription:
           'Aplikace iWash používá vaši polohu k vyhledání nejbližších myček aut.',
         ITSAppUsesNonExemptEncryption: false,
+      },
+    },
+
+    android: {
+      ...(config.expo?.android || {}),
+      // Google Maps SDK for Android (tiles/SDK usage)
+      config: {
+        ...(config.expo?.android?.config || {}),
+        googleMaps: {
+          ...(config.expo?.android?.config?.googleMaps || {}),
+          apiKey: process.env.ANDROID_MAPS_SDK_API_KEY,
+        },
       },
     },
 

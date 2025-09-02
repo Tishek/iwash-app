@@ -1,0 +1,18 @@
+# Node / Expo
+node_modules
+.expo
+.expo-shared
+.expo/*
+dist
+build
+
+# Environment secrets
+.env
+.env.*
+ios/keys/
+
+# OS/Editor
+.DS_Store
+.idea
+.vscode
+*.log
