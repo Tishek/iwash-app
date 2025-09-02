@@ -121,13 +121,13 @@ export function usePlacesSearch({
 
         // Parent může po dokončení fetch → expandovat list a posunout mapu
          if (typeof onBeforeExpand === 'function') {
-           try {
-             onBeforeExpand(focusCoord);
-           } catch (err) {
-             // Neshoď vyhledávání kvůli UI chybě; jen zaloguj
-             console.warn('[places] onBeforeExpand failed:', String(err?.message ?? err));
-             DEV_INFO('[places] fetch error:', e);
-           }
+         try {
+           onBeforeExpand(focusCoord);
+         } catch (err) {
+           // Neshoď vyhledávání kvůli UI chybě; jen zaloguj
+           console.warn('[places] onBeforeExpand failed:', String(err?.message ?? err));
+           DEV_INFO('[places] onBeforeExpand error:', String(err?.message ?? err));
+         }
          }
       } catch (e) {
         const msg = String(e?.message ?? e);

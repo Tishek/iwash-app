@@ -325,6 +325,7 @@ function AppInner() {
         P={P}
         isDark={isDark}
         t={t}
+        sheetTopH={sheetTopH}
         sheetH={sheetH}
         setSheetTopH={setSheetTopH}
         setSheetTopY={setSheetTopY}

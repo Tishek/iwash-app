@@ -1,5 +1,5 @@
 // src/components/BottomSheetContainer.jsx
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useMemo, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Platform, Dimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { DEV_INFO } from '../utils/devlog';
@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomSheetPanel from './BottomSheetPanel';
+import { ITEM_H } from '../utils/constants';
 
 const ENABLE_SWIPE = true;       // swipe zapnutý
 const VELOCITY_SNAP = 900;
@@ -26,6 +27,7 @@ export default function BottomSheetContainer(props) {
     P,
     isDark,
     t,
+    sheetTopH,
     setSheetTopH,
     setSheetTopY,
     isExpanded,
@@ -67,11 +69,19 @@ export default function BottomSheetContainer(props) {
   }, [insets?.top, SCREEN_H]);
 
   const HALF_PX = useMemo(() => {
+    // Cíl: v half stavu ukázat přibližně 1.5 karty v seznamu.
+    // Odhady pevných částí:
+    const handleApprox = 18;     // sheetHandleArea + handle vizuál
+    const listTopPad = 8;        // styles.sheetBody paddingVertical top
+    const sep = 8;               // jeden mezisep mezi 1. a 2. kartou
+    const headerH = Number(sheetTopH) || 140; // fallback, než změříme layout hlavičky
+
+    const desired = Math.round(headerH + handleApprox + listTopPad + (ITEM_H * 1.5) + sep);
+
     const minHalf = COLLAPSED_PX + MIN_GAP_BOTTOM;
     const maxHalf = EXPANDED_PX - MIN_GAP_TOP;
-    const mid = Math.round(SCREEN_H * 0.48);
-    return Math.max(minHalf, Math.min(maxHalf, mid));
-  }, [COLLAPSED_PX, EXPANDED_PX, SCREEN_H]);
+    return Math.max(minHalf, Math.min(maxHalf, Math.round(SCREEN_H * 0.48)));
+  }, [sheetTopH, COLLAPSED_PX, EXPANDED_PX]);
 
   const points = useMemo(
     () => ({ COLLAPSED: COLLAPSED_PX, HALF: HALF_PX, EXPANDED: EXPANDED_PX }),
@@ -84,6 +94,7 @@ export default function BottomSheetContainer(props) {
   const animatedY = useSharedValue(isExpanded ? points.HALF : points.COLLAPSED);
   const ctx = useSharedValue(0);
   const isAnimatingRef = useRef(false);
+  const [isFullyExpanded, setIsFullyExpanded] = useState(false);
 
   const nameForPoint = (p) => {
     if (Math.abs(p - points.COLLAPSED) < 2) return 'COLLAPSED';
@@ -96,6 +107,7 @@ export default function BottomSheetContainer(props) {
     const logicalExpanded = name !== 'COLLAPSED';
     try { Haptics.selectionAsync(); } catch {}
     setIsExpanded?.(logicalExpanded);
+    setIsFullyExpanded(name === 'EXPANDED');
     // Předej skutečnou pozici horní hrany sheetu (odshora)
     try {
       const topY = SCREEN_H - Number(targetPx || 0);
@@ -168,7 +180,6 @@ export default function BottomSheetContainer(props) {
   }));
 
   const handleSetFilterMode = (key) => {
-    try { Haptics.selectionAsync(); } catch {}
     try { setSelectedId?.(null); } catch {}
     // drobná de-bounce, ať se mapové klastrování nepere s listem
     setTimeout(() => { try { setFilterMode?.(key); } catch (e) { /* no-op */ } }, 0);
@@ -201,6 +212,7 @@ export default function BottomSheetContainer(props) {
         sheetH={points.EXPANDED}
         setSheetTopH={setSheetTopH}
         isExpanded={isExpanded}
+        isFullyExpanded={isFullyExpanded}
         setIsExpanded={handleSetIsExpanded}
         scrollHandlerRef={listGestureRef}
         filteredPlaces={filteredPlaces}

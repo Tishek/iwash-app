@@ -36,8 +36,10 @@ export default function ListContent({
   scrollHandlerRef,
 }) {
   const insets = useSafeAreaInsets?.() || { bottom: 0 };
-  // menší padding, když je sheet plně otevřený
-  const bottomPad = (insets?.bottom || 0) + (isFullyExpanded ? 28 : 180);
+  // Plně otevřený: stejný padding jako v Nastavení; jinak větší rezerva pro tlačítka
+  const bottomPad = isFullyExpanded
+    ? Math.max(90, (insets?.bottom || 0) + 34)
+    : (insets?.bottom || 0) + 180;
   // --- ČISTÉ JS FUNKCE (bez workletu) ---------------------------------------
   // Pokud je budeš volat z workletu, použij: runOnJS(scrollToIndexJS)(i)
   const scrollToIndexJS = useCallback(
