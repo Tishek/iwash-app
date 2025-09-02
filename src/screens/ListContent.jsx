@@ -123,6 +123,8 @@ export default function ListContent({
                 bounces={false}
                 scrollEventThrottle={16}
                 nestedScrollEnabled
+                removeClippedSubviews
+                getItemLayout={(data, index) => ({ length: ITEM_H + 8, offset: (ITEM_H + 8) * index, index })}
                 initialNumToRender={8}
                 windowSize={7}
                 maxToRenderPerBatch={8}

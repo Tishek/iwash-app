@@ -12,7 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomSheetPanel from './BottomSheetPanel';
-import { ITEM_H } from '../utils/constants';
+// no ITEM_H needed here
 
 const ENABLE_SWIPE = true;       // swipe zapnutý
 const VELOCITY_SNAP = 900;
@@ -139,10 +139,10 @@ export default function BottomSheetContainer(props) {
 
   // Pan gesto (čistě worklet logika + onEnd animuje přímo na UI vlákně)
   const pan = Gesture.Pan()
-    .simultaneousWithExternalGesture(listGestureRef)
     .activeOffsetY([-10, 10])
     .onBegin(() => {
-      try { runOnJS(() => { try { onSnapStart?.(); } catch {} })(); } catch {}
+      // Bezpečné volání JS callbacku: použij runOnJS pouze s JS funkcí
+      if (onSnapStart) { try { runOnJS(onSnapStart)(); } catch {} }
       ctx.value = animatedY.value;
     })
     .onUpdate((e) => {
