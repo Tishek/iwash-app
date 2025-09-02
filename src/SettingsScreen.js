@@ -104,7 +104,8 @@ export default function SettingsScreen({
 
   const insets = useSafeAreaInsets?.() || { bottom: 0 };
   // Větší padding dole, aby poslední sekce (Vzhled) nebyla nalepená na spodní hranu
-  const bottomPad = Math.max(48, (insets?.bottom || 0) + 32);
+  // Kompromis: dost místa nad home‑indicator, ale ne přehnaně
+  const bottomPad = Math.max(90, (insets?.bottom || 0) + 34);
 
   return (
     <Modal visible={!!visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>

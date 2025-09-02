@@ -77,9 +77,9 @@ export function usePlaceFocus({
 
     if (!place?.location) return;
 
-    // Vždy posuň mapu – fallback v useVisibleCentering zajistí korektní viditelnost
+    // Posuň mapu – když list není rozbalený, neměň zoom (jen posun)
     moveMarkerToVisibleCenter(place.location, {
-      zoomFactor: 0.68,
+      zoomFactor: isExpanded ? 0.68 : 1.0,
       minDelta: 0.01,
       pinScale: PIN_SELECTED_SCALE,
       targetSpanM: TARGET_VISIBLE_SPAN_M,
@@ -109,9 +109,9 @@ export function usePlaceFocus({
       setSelectedId((prev) => (prev === p.id ? prev : p.id));
     }, place);
 
-    // Posuň mapu vždy
+    // Posuň mapu – bez změny zoomu, pokud list není rozbalený
     moveMarkerToVisibleCenter(place.location, {
-      zoomFactor: 0.7,
+      zoomFactor: isExpanded ? 0.7 : 1.0,
       minDelta: 0.01,
       pinScale: PIN_SELECTED_SCALE,
       targetSpanM: TARGET_VISIBLE_SPAN_M,

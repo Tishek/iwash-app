@@ -27,6 +27,7 @@ export default function BottomSheetContainer(props) {
     isDark,
     t,
     setSheetTopH,
+    setSheetTopY,
     isExpanded,
     setIsExpanded,
     filteredPlaces,
@@ -41,6 +42,7 @@ export default function BottomSheetContainer(props) {
     setFilterMode,
     listRef,
     selectedId,
+    setSelectedId,
     settings,
     isFav,
     toggleFav,
@@ -51,6 +53,7 @@ export default function BottomSheetContainer(props) {
 
   const insets = useSafeAreaInsets();
   const { height: SCREEN_H } = Dimensions.get('window');
+  const listGestureRef = useRef(null);
 
   // Snap body (číselné px)
   const COLLAPSED_PX = useMemo(() => {
@@ -93,7 +96,11 @@ export default function BottomSheetContainer(props) {
     const logicalExpanded = name !== 'COLLAPSED';
     try { Haptics.selectionAsync(); } catch {}
     setIsExpanded?.(logicalExpanded);
-    setSheetTopH?.(targetPx);
+    // Předej skutečnou pozici horní hrany sheetu (odshora)
+    try {
+      const topY = SCREEN_H - Number(targetPx || 0);
+      setSheetTopY?.(topY);
+    } catch {}
   };
 
   const finishAnim = (targetPx) => {
@@ -119,6 +126,7 @@ export default function BottomSheetContainer(props) {
 
   // Pan gesto (čistě worklet logika + onEnd animuje přímo na UI vlákně)
   const pan = Gesture.Pan()
+    .simultaneousWithExternalGesture(listGestureRef)
     .activeOffsetY([-10, 10])
     .onBegin(() => {
       ctx.value = animatedY.value;
@@ -161,7 +169,9 @@ export default function BottomSheetContainer(props) {
 
   const handleSetFilterMode = (key) => {
     try { Haptics.selectionAsync(); } catch {}
-    setFilterMode?.(key);
+    try { setSelectedId?.(null); } catch {}
+    // drobná de-bounce, ať se mapové klastrování nepere s listem
+    setTimeout(() => { try { setFilterMode?.(key); } catch (e) { /* no-op */ } }, 0);
   };
 
   // Swipe-only: tap-toggle (funkční updater) ignorujeme
@@ -179,6 +189,10 @@ export default function BottomSheetContainer(props) {
 
   const sheetBody = (
     <Animated.View style={[stylesSheet.sheet, style]}>
+      {/* Drag zóna pouze v horní části – list neovládá výšku sheetu */}
+      <GestureDetector gesture={pan}>
+        <Animated.View pointerEvents="auto" style={stylesSheet.dragZone} />
+      </GestureDetector>
       <BottomSheetPanel
         styles={styles}
         P={P}
@@ -188,6 +202,7 @@ export default function BottomSheetContainer(props) {
         setSheetTopH={setSheetTopH}
         isExpanded={isExpanded}
         setIsExpanded={handleSetIsExpanded}
+        scrollHandlerRef={listGestureRef}
         filteredPlaces={filteredPlaces}
         places={places}
         radiusM={radiusM}
@@ -210,11 +225,7 @@ export default function BottomSheetContainer(props) {
     </Animated.View>
   );
 
-  return ENABLE_SWIPE ? (
-    <GestureDetector gesture={pan}>{sheetBody}</GestureDetector>
-  ) : (
-    sheetBody
-  );
+  return sheetBody;
 }
 
 const stylesSheet = StyleSheet.create({
@@ -235,5 +246,13 @@ const stylesSheet = StyleSheet.create({
       ios: { shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 12, shadowOffset: { width: 0, height: -4 } },
       android: { elevation: 12 },
     }),
+  },
+  dragZone: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 48, // pouze horní pás reaguje na swipe
+    zIndex: 5,
   },
 });

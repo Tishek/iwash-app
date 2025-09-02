@@ -1,5 +1,7 @@
 // src/components/ListContent.jsx
 import React, { useCallback } from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { NativeViewGestureHandler } from 'react-native-gesture-handler';
 import { View, Text, FlatList } from 'react-native';
 import ListHeader from '../components/ListHeader';
 import FiltersRow from '../components/FiltersRow';
@@ -11,6 +13,7 @@ export default function ListContent({
   P,
   isDark,
   t,
+  isFullyExpanded,
   filteredPlaces,
   places,
   radiusM,
@@ -30,7 +33,11 @@ export default function ListContent({
   openNavigation,
   focusPlace,
   setSheetTopH,
+  scrollHandlerRef,
 }) {
+  const insets = useSafeAreaInsets?.() || { bottom: 0 };
+  // menší padding, když je sheet plně otevřený
+  const bottomPad = (insets?.bottom || 0) + (isFullyExpanded ? 28 : 180);
   // --- ČISTÉ JS FUNKCE (bez workletu) ---------------------------------------
   // Pokud je budeš volat z workletu, použij: runOnJS(scrollToIndexJS)(i)
   const scrollToIndexJS = useCallback(
@@ -103,22 +110,22 @@ export default function ListContent({
           </Text>
         ) : (
           <>
-            <FlatList
-              ref={listRef}
-              style={{ flex: 1 }}
-              data={filteredPlaces}
-              keyExtractor={(item) => item.id}
-              ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-              contentContainerStyle={{ paddingBottom: 72 }}
-              keyboardShouldPersistTaps="handled"
-              bounces={false}
-              scrollEventThrottle={16}
-              nestedScrollEnabled
-              initialNumToRender={8}
-              windowSize={7}
-              maxToRenderPerBatch={8}
-              removeClippedSubviews
-              onScrollToIndexFailed={onScrollToIndexFailed}
+            <NativeViewGestureHandler ref={scrollHandlerRef}>
+              <FlatList
+                ref={listRef}
+                style={{ flex: 1 }}
+                data={filteredPlaces}
+                keyExtractor={(item) => item.id}
+                ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
+                contentContainerStyle={{ paddingBottom: bottomPad }}
+                keyboardShouldPersistTaps="handled"
+                bounces={false}
+                scrollEventThrottle={16}
+                nestedScrollEnabled
+                initialNumToRender={8}
+                windowSize={7}
+                maxToRenderPerBatch={8}
+                onScrollToIndexFailed={onScrollToIndexFailed}
               renderItem={({ item, index }) => {
                 try {
                   return (
@@ -143,6 +150,7 @@ export default function ListContent({
                 }
               }}
             />
+            </NativeViewGestureHandler>
           </>
         )}
       </View>

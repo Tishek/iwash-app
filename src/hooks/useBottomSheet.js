@@ -10,7 +10,8 @@ import { Animated, Dimensions } from 'react-native';
 function useBottomSheet({ collapsedH = 110, expandedH = 420 } = {}) {
   const sheetH = useRef(new Animated.Value(collapsedH)).current;
   const [isExpanded, setIsExpanded] = useState(false);
-  const [sheetTopH, setSheetTopH] = useState(null); // top Y pozice listu, doplňuje BottomSheetContainer
+  const [sheetTopY, setSheetTopY] = useState(null); // Y souřadnice horní hrany sheetu (odshora)
+  const [sheetTopH, setSheetTopH] = useState(null); // výška horní hlavičky listu uvnitř sheetu
 
   useEffect(() => {
     const target = isExpanded ? expandedH : collapsedH;
@@ -18,11 +19,21 @@ function useBottomSheet({ collapsedH = 110, expandedH = 420 } = {}) {
   }, [isExpanded, collapsedH, expandedH, sheetH]);
 
   const screenH = Dimensions.get('window').height;
-  const sheetTop = Number.isFinite(sheetTopH)
-    ? sheetTopH
+  const sheetTop = Number.isFinite(sheetTopY)
+    ? sheetTopY
     : (isExpanded ? Math.round(screenH * 0.55) : screenH);
 
-  return { isExpanded, setIsExpanded, sheetH, sheetTopH, setSheetTopH, sheetTop };
+  return {
+    isExpanded,
+    setIsExpanded,
+    sheetH,
+    // hlavička listu uvnitř sheetu (pro offset při scrollToIndex)
+    sheetTopH,
+    setSheetTopH,
+    // skutečná pozice horní hrany sheetu na obrazovce (pro viditelnou část mapy)
+    sheetTop,
+    setSheetTopY,
+  };
 }
 
 export { useBottomSheet };     // pojmenovaný export

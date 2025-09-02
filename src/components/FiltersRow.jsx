@@ -17,8 +17,12 @@ export default function FiltersRow({ filterMode, setFilterMode, isDark, P, style
         <TouchableOpacity
           key={btn.key}
           onPress={() => {
-            try { setFilterMode(btn.key); }
-            catch (e) { DEV_ERROR('[filters] setFilterMode failed:', e); }
+            try {
+              DEV_WARN('[filters] switching to', btn.key);
+              setFilterMode(btn.key);
+            } catch (e) {
+              DEV_ERROR('[filters] setFilterMode failed:', e);
+            }
           }}
           style={[
             styles.filterBtn,
@@ -33,4 +37,3 @@ export default function FiltersRow({ filterMode, setFilterMode, isDark, P, style
     </ScrollView>
   );
 }
-

@@ -9,6 +9,7 @@ export function useFilteredPlaces({ places, filterMode, isFav, favoritesData, se
   const filteredPlaces = useMemo(() => {
     try {
       if (!Array.isArray(places)) return lastRef.current || [];
+      DEV_WARN('[filters] rebuild', filterMode, 'places:', places.length);
       if (filterMode === 'ALL') {
         lastRef.current = places;
         return places;
@@ -27,6 +28,7 @@ export function useFilteredPlaces({ places, filterMode, isFav, favoritesData, se
         return combined;
       }
       const out = places.filter(p => p && p.inferredType === filterMode);
+      DEV_WARN('[filters] result length:', out.length);
       lastRef.current = out;
       return out;
     } catch (e) {
@@ -43,4 +45,3 @@ export function useFilteredPlaces({ places, filterMode, isFav, favoritesData, se
 
   return { filteredPlaces, selectedId, setSelectedId, idToIndex };
 }
-

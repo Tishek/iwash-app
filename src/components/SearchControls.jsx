@@ -1,9 +1,7 @@
 // src/components/SearchControls.jsx
-import React, { useEffect, useRef } from 'react';
-import { Animated } from 'react-native';
+import React from 'react';
 import TopBars from './TopBars';
 import RadiusDock from './RadiusDock';
-import QuickRadiusChips from './QuickRadiusChips';
 
 export default function SearchControls({
   isExpanded,
@@ -22,16 +20,6 @@ export default function SearchControls({
   onCommitRadius,
 }) {
   const isCollapsed = !isExpanded; // COLLAPSED = false, HALF/FULL = true
-
-  // Plynulý fade pro rychlé čipy při přechodu do/ze stavu HALF/FULL
-  const chipsOpacity = useRef(new Animated.Value(isCollapsed ? 1 : 0)).current;
-  useEffect(() => {
-    Animated.timing(chipsOpacity, {
-      toValue: isCollapsed ? 1 : 0,
-      duration: 180,
-      useNativeDriver: true,
-    }).start();
-  }, [isCollapsed, chipsOpacity]);
 
   return (
     <>
@@ -60,17 +48,7 @@ export default function SearchControls({
         />
       )}
 
-      {/* Fázované mizení čipů místo ostrého přepnutí */}
-      <Animated.View pointerEvents={isCollapsed ? 'auto' : 'none'} style={{ opacity: chipsOpacity }}>
-        {isCollapsed && (
-          <QuickRadiusChips
-            radiusM={radiusM}
-            commitRadius={onCommitRadius}
-            styles={styles}
-            t={t}
-          />
-        )}
-      </Animated.View>
+      {/* Rychlé čipy vpravo byly na přání odstraněny */}
     </>
   );
 }

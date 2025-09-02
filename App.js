@@ -41,6 +41,27 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
+// Global JS error handler – log as ERROR even když overlay není otevřený
+try {
+  // eslint-disable-next-line no-undef
+  const orig = global.ErrorUtils?.getGlobalHandler?.();
+  // eslint-disable-next-line no-undef
+  global.ErrorUtils?.setGlobalHandler?.((err, isFatal) => {
+    try { console.error('[GlobalError]', isFatal ? 'FATAL' : 'non-fatal', err); } catch {}
+    if (typeof orig === 'function') { try { orig(err, isFatal); } catch {} }
+  });
+} catch {}
+
+// Zachytí neodchycené Promise rejections (často chybí v console.error)
+try {
+  const logRejection = (e) => {
+    try { console.error('[UnhandledPromiseRejection]', e?.reason ?? e); } catch {}
+  };
+  if (typeof globalThis.addEventListener === 'function') {
+    globalThis.addEventListener('unhandledrejection', logRejection);
+  }
+} catch {}
+
 LogBox.ignoreLogs(['No cluster with the specified id']);
 
 function AppInner() {
@@ -122,7 +143,7 @@ function AppInner() {
   const { isDark, P } = useThemePalette(settings.theme);
   const clusterRadiusPx = useClusterRadiusPx(region);
 
-  const { isExpanded, setIsExpanded, sheetH, sheetTopH, setSheetTopH, sheetTop } = useBottomSheet({
+  const { isExpanded, setIsExpanded, sheetH, sheetTopH, setSheetTopH, sheetTop, setSheetTopY } = useBottomSheet({
     onAtTargetHeight: () => {
       if (pendingFocusCoordRef.current) {
         const coord = pendingFocusCoordRef.current;
@@ -306,6 +327,7 @@ function AppInner() {
         t={t}
         sheetH={sheetH}
         setSheetTopH={setSheetTopH}
+        setSheetTopY={setSheetTopY}
         isExpanded={isExpanded}
         setIsExpanded={setIsExpanded}
         filteredPlaces={filteredPlaces}
@@ -320,6 +342,7 @@ function AppInner() {
         setFilterMode={setFilterMode}
         listRef={listRef}
         selectedId={selectedId}
+        setSelectedId={setSelectedId}
         settings={settings}
         isFav={isFav}
         toggleFav={toggleFav}

@@ -13,6 +13,8 @@ export default function BottomSheetPanel({
   setSheetTopH,
   isExpanded,
   setIsExpanded, // v Containeru spouští animovaný snap
+  isFullyExpanded,
+  scrollHandlerRef,
   filteredPlaces,
   places,
   radiusM,
@@ -68,6 +70,7 @@ export default function BottomSheetPanel({
           P={P}
           isDark={isDark}
           t={t}
+          isFullyExpanded={isFullyExpanded}
           filteredPlaces={filteredPlaces}
           places={places}
           radiusM={radiusM}
@@ -87,6 +90,7 @@ export default function BottomSheetPanel({
           openNavigation={openNavigation}
           focusPlace={focusPlace}
           setSheetTopH={setSheetTopH}
+          scrollHandlerRef={scrollHandlerRef}
         />
       </View>
     </Animated.View>

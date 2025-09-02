@@ -51,8 +51,7 @@ export function DebugProvider({ children }) {
   // Console patching (dev only) - with guard against re-patching
   useEffect(() => {
     if (!__DEV__) return;
-    // Capture pouze když je overlay otevřený a je to zapnuto
-    if (!captureConsole || !showOverlay) return;
+    // Patchneme vždy; log/info zapisujeme jen pokud je overlay otevřený a capture zapnutý
     if (originalsRef.current.patched) return; // prevent re-patching
     
     const orig = {
@@ -82,8 +81,15 @@ export function DebugProvider({ children }) {
       }, 0);
     };
     
-    console.log = (...args) => { try { orig.log?.(...args); } catch {} stableAddLog('log', ...args); };
-    console.info = (...args) => { try { orig.info?.(...args); } catch {} stableAddLog('info', ...args); };
+    console.log = (...args) => {
+      try { orig.log?.(...args); } catch {}
+      if (showOverlay && captureConsole) stableAddLog('log', ...args);
+    };
+    console.info = (...args) => {
+      try { orig.info?.(...args); } catch {}
+      if (showOverlay && captureConsole) stableAddLog('info', ...args);
+    };
+    // warn/error vždy zapisujeme (kvůli pádům)
     console.warn = (...args) => { try { orig.warn?.(...args); } catch {} stableAddLog('warn', ...args); };
     console.error = (...args) => { try { orig.error?.(...args); } catch {} stableAddLog('error', ...args); };
     
@@ -96,7 +102,7 @@ export function DebugProvider({ children }) {
         originalsRef.current.patched = false;
       } catch {}
     };
-  }, [captureConsole, showOverlay]); // toggle by overlay visibility to reduce overhead
+  }, [captureConsole, showOverlay]);
 
   const value = useMemo(() => ({
     showOverlay,
