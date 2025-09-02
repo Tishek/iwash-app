@@ -37,6 +37,7 @@ import { useTopOcclusion } from './src/hooks/useTopOcclusion';
 import { useSearchControls } from './src/hooks/useSearchControls';
 import { DebugProvider } from './src/debug/DebugProvider';
 import DebugOverlay from './src/debug/DebugOverlay';
+import ErrorBoundary from './src/components/ErrorBoundary.jsx';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
@@ -89,6 +90,7 @@ function AppInner() {
   const clusterZoomingRef = useRef(false);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [isSheetAnimating, setIsSheetAnimating] = useState(false);
 
   const {
     hasPermission, region, setRegion, coords, followMe, setFollowMe, disableFollow, recenter
@@ -116,7 +118,7 @@ function AppInner() {
     radiusM,
     searchCenter: null,
     autoReload: false,
-    // isSheetAnimating: isSheetAnimating, // pokud někdy přidáme z BottomSheetu
+    isSheetAnimating: isSheetAnimating,
   });
 
   const [filterMode, setFilterMode] = useState('ALL');
@@ -262,6 +264,32 @@ function AppInner() {
   const { toggleOverlay } =
     (function useMaybeDebug() { try { return useDebug() || {}; } catch { return {}; } })();
 
+  // Callbacks z BottomSheetu – pro pauzu fetchů a centrování po snapu
+  const onSheetSnapStart = useCallback(() => {
+    try { console.warn('[sheet] snap start'); } catch {}
+    setIsSheetAnimating(true);
+  }, []);
+
+  const onSheetSnapEnd = useCallback(({ name, targetPx, topY } = {}) => {
+    setIsSheetAnimating(false);
+    try { console.warn('[sheet] snap end ->', name, Math.round(targetPx || 0), 'topY:', Math.round(topY || 0)); } catch {}
+    // Pokud čeká centrování na první klik, proveď ho nyní
+    const coord = pendingFocusCoordRef.current;
+    const scale = (pendingFocusScaleRef.current ?? 0);
+    if (coord) {
+      requestAnimationFrame(() => {
+        moveMarkerToVisibleCenter(coord, {
+          zoomFactor: 0.7,
+          minDelta: 0.01,
+          pinScale: scale,
+          targetSpanM: TARGET_VISIBLE_SPAN_M,
+        });
+        pendingFocusCoordRef.current = null;
+        pendingFocusScaleRef.current = 0;
+      });
+    }
+  }, [moveMarkerToVisibleCenter]);
+
   return (
     <View style={[styles.container, { backgroundColor: P.bg }]}>
       <MainMapView
@@ -325,7 +353,8 @@ function AppInner() {
         P={P}
         isDark={isDark}
         t={t}
-        sheetTopH={sheetTopH}
+        onSnapStart={onSheetSnapStart}
+        onSnapEnd={onSheetSnapEnd}
         sheetH={sheetH}
         setSheetTopH={setSheetTopH}
         setSheetTopY={setSheetTopY}
@@ -378,7 +407,9 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <DebugProvider>
-          <AppInner />
+          <ErrorBoundary>
+            <AppInner />
+          </ErrorBoundary>
         </DebugProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

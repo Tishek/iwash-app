@@ -1,9 +1,9 @@
 // src/components/ListContent.jsx
 import React, { useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { NativeViewGestureHandler } from 'react-native-gesture-handler';
 import { View, Text, FlatList } from 'react-native';
 import ListHeader from '../components/ListHeader';
+import { DEV_ERROR } from '../utils/devlog';
 import FiltersRow from '../components/FiltersRow';
 import PlaceCard from '../components/PlaceCard.jsx';
 import { ITEM_H } from '../utils/constants';
@@ -36,10 +36,10 @@ export default function ListContent({
   scrollHandlerRef,
 }) {
   const insets = useSafeAreaInsets?.() || { bottom: 0 };
-  // Plně otevřený: stejný padding jako v Nastavení; jinak větší rezerva pro tlačítka
+  // Full: ještě menší padding; Half/Collapsed: rezerva kvůli tlačítkům Navigovat
   const bottomPad = isFullyExpanded
-    ? Math.max(90, (insets?.bottom || 0) + 34)
-    : (insets?.bottom || 0) + 180;
+    ? Math.max(56, (insets?.bottom || 0) + 12)
+    : (insets?.bottom || 0) + ITEM_H * 3;
   // --- ČISTÉ JS FUNKCE (bez workletu) ---------------------------------------
   // Pokud je budeš volat z workletu, použij: runOnJS(scrollToIndexJS)(i)
   const scrollToIndexJS = useCallback(
@@ -112,7 +112,6 @@ export default function ListContent({
           </Text>
         ) : (
           <>
-            <NativeViewGestureHandler ref={scrollHandlerRef}>
               <FlatList
                 ref={listRef}
                 style={{ flex: 1 }}
@@ -147,12 +146,12 @@ export default function ListContent({
                     />
                   );
                 } catch (e) {
-                  // Defensive: pokud by selhala renderItem, přeskočíme položku
+                  // Defensive: pokud by selhala renderItem, zaloguj a přeskoč položku
+                  DEV_ERROR('[ListContent] renderItem failed:', e);
                   return null;
                 }
               }}
             />
-            </NativeViewGestureHandler>
           </>
         )}
       </View>

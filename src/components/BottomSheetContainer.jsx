@@ -27,7 +27,8 @@ export default function BottomSheetContainer(props) {
     P,
     isDark,
     t,
-    sheetTopH,
+    onSnapStart,
+    onSnapEnd,
     setSheetTopH,
     setSheetTopY,
     isExpanded,
@@ -69,19 +70,12 @@ export default function BottomSheetContainer(props) {
   }, [insets?.top, SCREEN_H]);
 
   const HALF_PX = useMemo(() => {
-    // Cíl: v half stavu ukázat přibližně 1.5 karty v seznamu.
-    // Odhady pevných částí:
-    const handleApprox = 18;     // sheetHandleArea + handle vizuál
-    const listTopPad = 8;        // styles.sheetBody paddingVertical top
-    const sep = 8;               // jeden mezisep mezi 1. a 2. kartou
-    const headerH = Number(sheetTopH) || 140; // fallback, než změříme layout hlavičky
-
-    const desired = Math.round(headerH + handleApprox + listTopPad + (ITEM_H * 1.5) + sep);
-
+    // O něco vyšší half – pro lepší prostor na konci seznamu
     const minHalf = COLLAPSED_PX + MIN_GAP_BOTTOM;
     const maxHalf = EXPANDED_PX - MIN_GAP_TOP;
-    return Math.max(minHalf, Math.min(maxHalf, Math.round(SCREEN_H * 0.48)));
-  }, [sheetTopH, COLLAPSED_PX, EXPANDED_PX]);
+    const mid = Math.round(SCREEN_H * 0.56);
+    return Math.max(minHalf, Math.min(maxHalf, mid));
+  }, [COLLAPSED_PX, EXPANDED_PX, SCREEN_H]);
 
   const points = useMemo(
     () => ({ COLLAPSED: COLLAPSED_PX, HALF: HALF_PX, EXPANDED: EXPANDED_PX }),
@@ -95,6 +89,7 @@ export default function BottomSheetContainer(props) {
   const ctx = useSharedValue(0);
   const isAnimatingRef = useRef(false);
   const [isFullyExpanded, setIsFullyExpanded] = useState(false);
+  const filterBusyRef = useRef(false);
 
   const nameForPoint = (p) => {
     if (Math.abs(p - points.COLLAPSED) < 2) return 'COLLAPSED';
@@ -118,6 +113,11 @@ export default function BottomSheetContainer(props) {
   const finishAnim = (targetPx) => {
     isAnimatingRef.current = false;
     notifyEnd(targetPx);
+    try {
+      const name = nameForPoint(targetPx);
+      const topY = SCREEN_H - Number(targetPx || 0);
+      onSnapEnd?.({ name, targetPx, topY });
+    } catch {}
   };
 
   // Animace z JS vlákna s hlídačem rozjeté animace
@@ -125,6 +125,7 @@ export default function BottomSheetContainer(props) {
     if (isAnimatingRef.current) return;
     isAnimatingRef.current = true;
     DEV_INFO('[BS] animateTo ->', Math.round(targetPx));
+    try { onSnapStart?.(); } catch {}
     animatedY.value = withTiming(targetPx, { duration: 220 }, (finished) => {
       if (finished) runOnJS(finishAnim)(targetPx);
       else runOnJS(() => { isAnimatingRef.current = false; })();
@@ -141,6 +142,7 @@ export default function BottomSheetContainer(props) {
     .simultaneousWithExternalGesture(listGestureRef)
     .activeOffsetY([-10, 10])
     .onBegin(() => {
+      try { runOnJS(() => { try { onSnapStart?.(); } catch {} })(); } catch {}
       ctx.value = animatedY.value;
     })
     .onUpdate((e) => {
@@ -180,9 +182,21 @@ export default function BottomSheetContainer(props) {
   }));
 
   const handleSetFilterMode = (key) => {
+    try { console.warn('[filters] click ->', key); } catch {}
+    if (filterBusyRef.current) { try { console.warn('[filters] busy; skip'); } catch {} ; return; }
+    filterBusyRef.current = true;
     try { setSelectedId?.(null); } catch {}
     // drobná de-bounce, ať se mapové klastrování nepere s listem
-    setTimeout(() => { try { setFilterMode?.(key); } catch (e) { /* no-op */ } }, 0);
+    requestAnimationFrame(() => {
+      try {
+        console.warn('[filters] setFilterMode', key);
+        setFilterMode?.(key);
+      } catch (e) {
+        try { console.error('[filters] setFilterMode failed:', e); } catch {}
+      } finally {
+        setTimeout(() => { filterBusyRef.current = false; }, 140);
+      }
+    });
   };
 
   // Swipe-only: tap-toggle (funkční updater) ignorujeme

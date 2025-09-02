@@ -77,8 +77,9 @@ export function usePlaceFocus({
 
     if (!place?.location) return;
 
-    // Posuň mapu – když list není rozbalený, neměň zoom (jen posun)
-    moveMarkerToVisibleCenter(place.location, {
+    // Posuň mapu: pokud list ještě není rozbalený, počkej až se rozbalí,
+    // a teprve potom střed posuň (jinak by mohl být pin zakryt listem)
+    const doCenter = () => moveMarkerToVisibleCenter(place.location, {
       zoomFactor: isExpanded ? 0.68 : 1.0,
       minDelta: 0.01,
       pinScale: PIN_SELECTED_SCALE,
@@ -92,6 +93,8 @@ export function usePlaceFocus({
         PIN_SELECTED_SCALE
       );
       safeSetExpanded(true);
+    } else {
+      doCenter();
     }
 
     // Scroll na položku
@@ -109,8 +112,8 @@ export function usePlaceFocus({
       setSelectedId((prev) => (prev === p.id ? prev : p.id));
     }, place);
 
-    // Posuň mapu – bez změny zoomu, pokud list není rozbalený
-    moveMarkerToVisibleCenter(place.location, {
+    // Posuň mapu – pokud list není rozbalený, počkej na rozbalení
+    const doCenter = () => moveMarkerToVisibleCenter(place.location, {
       zoomFactor: isExpanded ? 0.7 : 1.0,
       minDelta: 0.01,
       pinScale: PIN_SELECTED_SCALE,
@@ -123,6 +126,8 @@ export function usePlaceFocus({
         PIN_SELECTED_SCALE
       );
       safeSetExpanded(true);
+    } else {
+      doCenter();
     }
 
     const idx = idToIndex[place.id];
