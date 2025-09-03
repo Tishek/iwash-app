@@ -126,7 +126,7 @@ export default function MainMapView({
           disableFollow={disableFollow}
           getClusterEdgePadding={getClusterEdgePadding}
           collectCoordsFromBBox={(c) => collectCoordsFromBBoxWrapped(c)}
-          progressiveClusterZoom={(c) => progressiveClusterZoomWrapped(c)}
+          progressiveClusterZoom={(center, clusterId, extra) => progressiveClusterZoomWrapped(center, clusterId, extra)}
           region={region}
           regionRef={regionRef}
           clusterRadiusPx={clusterRadiusPx}
@@ -206,15 +206,9 @@ export default function MainMapView({
     }
   }, [filteredPlaces, selectedId, getPinScale, isFav, onMarkerPress, suspendMarkers]);
 
-  // Force-remount the ClusteredMapView when the marker identity set changes.
-  // This fully resets the internal index map of rn-maps-clustering and
-  // prevents any stale indices when children change rapidly.
-  const clusterKey = React.useMemo(() => {
-    try {
-      const ids = Array.isArray(filteredPlaces) ? filteredPlaces.map((p) => String(p.id)).join(',') : 'none';
-      return `cmv:${ids}`;
-    } catch { return 'cmv:none'; }
-  }, [filteredPlaces]);
+  // Zachovej stabilní instanci MapView – rn-maps-clustering si samo
+  // interně sleduje změny dětí. Zbytečný remount může narušit re‑indexaci
+  // a chování spider/clusters. Klíč proto nepoužíváme.
 
 
   // ❗Return až po všech hookách – pořadí hooků zůstává stejné v každém renderu
@@ -227,7 +221,6 @@ export default function MainMapView({
     <MapErrorBoundary>
       <View style={{ flex: 1 }}>
         <MapViewClustered
-          key={clusterKey}
           mapRef={mapRef}
           region={region}
           onRegionChangeComplete={handleRegionChangeComplete}

@@ -1,5 +1,6 @@
 // src/hooks/usePlaceFocus.js
 import * as Haptics from 'expo-haptics';
+import { InteractionManager } from 'react-native';
 import { runOnJS } from 'react-native-reanimated';
 import { breadcrumb } from '../utils/crashTrace';
 import { ITEM_H, PIN_SELECTED_SCALE, TARGET_VISIBLE_SPAN_M } from '../utils/constants';
@@ -59,11 +60,14 @@ export function usePlaceFocus({
   };
 
   const scheduleScrollJS = (idx, delayMs = 0) => {
+    const task = () => InteractionManager.runAfterInteractions(() => {
+      try { scrollToItemJS(idx); } catch {}
+    });
     if (delayMs > 0) {
-      setTimeout(() => scrollToItemJS(idx), delayMs);
+      setTimeout(task, delayMs);
     } else {
-      // jeden frame počkáme, ať má layout čas
-      requestAnimationFrame(() => scrollToItemJS(idx));
+      // jeden frame počkáme, ať má layout čas a doběhnou animace
+      requestAnimationFrame(task);
     }
   };
   // --------------------------------------------------------------------------

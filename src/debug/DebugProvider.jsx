@@ -134,19 +134,27 @@ export function DebugProvider({ children }) {
       try { if (shouldBreadcrumb(args)) breadcrumb('warn', args.map(a => stringifySafe(a)).join(' ')); } catch {}
     };
     console.error = (...args) => {
+      // Sestav text hned na začátku – rozhodneme, jestli volat orig.error nebo jen warn
+      const combined = (() => {
+        try { return args.map(a => stringifySafe(a)).join(' '); } catch { return ''; }
+      })();
+
+      // Benigní varování o klíčích – nevolej orig.error (zabrání RN RedBoxu)
+      const isBenignKeyWarn = /unique\s+"?key"?\s+prop/i.test(combined)
+        || /Each child in a list should have a unique/i.test(combined)
+        || /warning-keys/i.test(combined)
+        || /ForwardRef/i.test(combined);
+
+      if (isBenignKeyWarn) {
+        try { orig.warn?.(...args); } catch {}
+        if (showOverlay && captureConsole && !overlayRenderingRef.current) stableAddLog('warn', ...args);
+        try { if (shouldBreadcrumb(args)) breadcrumb('warn', combined); } catch {}
+        return;
+      }
+
+      // Ostatní chyby loguj jako error (případně i do overlaye)
       try { orig.error?.(...args); } catch {}
       if (!overlayRenderingRef.current) {
-        // Demote některé React dev warningy na warn (bez červené obrazovky)
-        const combined = args.map(a => stringifySafe(a)).join(' ');
-        const isBenignKeyWarn = /unique\s+"?key"?\s+prop/i.test(combined)
-          || /Each child in a list should have a unique/i.test(combined)
-          || /warning-keys/i.test(combined)
-          || /ForwardRef/i.test(combined);
-        if (isBenignKeyWarn) {
-          if (showOverlay && captureConsole) stableAddLog('warn', ...args);
-          try { if (shouldBreadcrumb(args)) breadcrumb('warn', combined); } catch {}
-          return;
-        }
         if (showOverlay && captureConsole) stableAddLog('error', ...args);
         try { if (shouldBreadcrumb(args)) breadcrumb('error', combined); } catch {}
         // Never mutate React state during render: defer overlay flash

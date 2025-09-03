@@ -134,7 +134,12 @@ export default function ListContent({
                 ref={listRef}
                 style={{ flex: 1 }}
                 data={filteredPlaces}
-                keyExtractor={(item) => item.id}
+                keyExtractor={(item, index) => {
+                  try {
+                    const id = item?.id;
+                    return (id !== undefined && id !== null) ? String(id) : String(index);
+                  } catch { return String(index); }
+                }}
                 ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
                 contentContainerStyle={{ paddingBottom: bottomPad }}
                 keyboardShouldPersistTaps="handled"

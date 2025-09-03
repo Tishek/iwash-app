@@ -147,29 +147,23 @@ function PlaceCard({
             <Text style={styles.navTxt}>{tt('btn.navigate', 'Navigovat')}</Text>
           </TouchableOpacity>
         ) : (
-          <>
-            <TouchableOpacity
-              onPress={() => openNavigation(item, 'apple')}
-              style={styles.navBtn}
-              accessibilityLabel={tt('nav.apple', 'Apple')}
-            >
-              <Text style={styles.navTxt}>{tt('nav.apple', 'Apple')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => openNavigation(item, 'google')}
-              style={styles.navBtn}
-              accessibilityLabel={tt('nav.google', 'Google')}
-            >
-              <Text style={styles.navTxt}>{tt('nav.google', 'Google')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => openNavigation(item, 'waze')}
-              style={styles.navBtn}
-              accessibilityLabel={tt('nav.waze', 'Waze')}
-            >
-              <Text style={styles.navTxt}>{tt('nav.waze', 'Waze')}</Text>
-            </TouchableOpacity>
-          </>
+          (() => {
+            const navs = [
+              { key: 'apple',  label: tt('nav.apple', 'Apple') },
+              { key: 'google', label: tt('nav.google', 'Google') },
+              { key: 'waze',   label: tt('nav.waze', 'Waze') },
+            ];
+            return navs.map((n) => (
+              <TouchableOpacity
+                key={n.key}
+                onPress={() => openNavigation(item, n.key)}
+                style={styles.navBtn}
+                accessibilityLabel={n.label}
+              >
+                <Text style={styles.navTxt}>{n.label}</Text>
+              </TouchableOpacity>
+            ));
+          })()
         )}
       </View>
     </TouchableOpacity>

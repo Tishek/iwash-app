@@ -25,39 +25,11 @@ export default function MapViewClustered({
   DEV_LOG('[MapViewClustered] Rendering with children:', !!children);
   DEV_LOG('[MapViewClustered] Children count:', React.Children.count(children));
 
-  // Validate children to prevent crashes
-  const isMarkerEl = (el) => !!(el && React.isValidElement(el) && el.props && el.props.coordinate);
-  const prevChildrenRef = React.useRef(null);
-  const validChildren = React.useMemo(() => {
-    if (!children) return null;
-    try {
-      const childArray = React.Children.toArray(children);
-      // Zachovej původní pořadí i klíče – viz React docs o stabilních keys
-      const validChildArray = childArray.filter(child => React.isValidElement(child));
-      if (freezeChildren) {
-        if (!prevChildrenRef.current) prevChildrenRef.current = validChildArray;
-        return prevChildrenRef.current;
-      }
-      // Stabilizační trik: pokud se počet markerů změnil oproti minulé verzi,
-      // na jeden frame vrátíme předchozí sadu, aby se rn-maps-clustering
-      // nesnažil klonovat staré indexy nad novým children polem.
-      const markersCount = validChildArray.filter(isMarkerEl).length;
-      const prev = prevChildrenRef.current;
-      const prevCount = Array.isArray(prev) ? prev.filter(isMarkerEl).length : null;
-      if (prev && prevCount !== null && markersCount !== prevCount) {
-        DEV_WARN('[MapViewClustered] children changed (markers count)', prevCount, '→', markersCount, '— stabilizing 1 frame');
-        // Keep previous children for this render, but remember the new list
-        // so the next frame will switch to it (1-frame stabilization)
-        prevChildrenRef.current = validChildArray;
-        return prev;
-      }
-      prevChildrenRef.current = validChildArray;
-      DEV_LOG(`[MapViewClustered] Valid children: ${validChildArray.length}/${childArray.length} (markers ${markersCount})`);
-      return validChildArray.length > 0 ? validChildArray : null;
-    } catch (error) {
-      console.error('[MapViewClustered] Error processing children:', error);
-      return prevChildrenRef.current || null;
-    }
+  // Děti předej přímo – knihovna si je sama memoizuje (Children.toArray)
+  // a pracuje s klíči. Složitější stabilizace zde může clustering rozbít.
+  const forwardedChildren = React.useMemo(() => {
+    try { return React.Children.count(children) ? children : null; }
+    catch { return children || null; }
   }, [children]);
   
   // Safe render cluster function
@@ -93,8 +65,10 @@ export default function MapViewClustered({
       showsScale={false}
       clusteringEnabled={!!clusteringEnabled}
       spiralEnabled
-      radius={Math.max(100, Math.min((clusterRadiusPx || 160) + 80, 360))} // Much earlier clustering
-      minPoints={1}
+      // Dřívější shlukování – přidáme ~40 px k odhadovanému radiusu
+      // a držíme rozumné meze. Tím se klastry tvoří už při mírném oddálení.
+      radius={Math.max(120, Math.min((clusterRadiusPx || 80) + 40, 280))}
+      minPoints={2}
       extent={512}
       clusterColor="#111"
       clusterTextColor="#fff"
@@ -115,7 +89,7 @@ export default function MapViewClustered({
         />
       )}
 
-      {validChildren}
+      {forwardedChildren}
     </ClusteredMapView>
   );
 }

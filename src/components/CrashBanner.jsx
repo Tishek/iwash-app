@@ -11,9 +11,10 @@ export default function CrashBanner({ report, onClose }) {
         {detail ? <Text style={s.detail} numberOfLines={2}>{detail}</Text> : null}
         {Array.isArray(list) && list.length > 0 && (
           <View style={{ marginTop: 6 }}>
-            {list.slice(-5).map((row, i) => (
-              <Text key={`cr-${i}`} style={s.row}>{row}</Text>
-            ))}
+            {list.slice(-5).map((row, i) => {
+              const key = `cr-${String(row).slice(0,80)}-${i}`;
+              return <Text key={key} style={s.row}>{row}</Text>;
+            })}
           </View>
         )}
         <TouchableOpacity onPress={onClose} style={s.btn} accessibilityLabel="Zavřít">
