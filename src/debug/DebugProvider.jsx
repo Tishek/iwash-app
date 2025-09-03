@@ -14,6 +14,8 @@ export function DebugProvider({ children }) {
   const [logs, setLogs] = useState([]);
 
   const originalsRef = useRef({});
+  const flashTimerRef = useRef(null);
+  const openedByFlashRef = useRef(false);
 
   // Load persisted prefs
   useEffect(() => {
@@ -48,6 +50,21 @@ export function DebugProvider({ children }) {
 
   const clearLogs = useCallback(() => setLogs([]), []);
   const toggleOverlay = useCallback(() => setShowOverlay(v => !v), []);
+  const flashOverlay = useCallback((ms = 3000) => {
+    try {
+      if (!showOverlay) {
+        openedByFlashRef.current = true;
+        setShowOverlay(true);
+        if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+        flashTimerRef.current = setTimeout(() => {
+          if (openedByFlashRef.current) {
+            openedByFlashRef.current = false;
+            setShowOverlay(false);
+          }
+        }, ms);
+      }
+    } catch {}
+  }, [showOverlay]);
 
   // Console patching (dev only) - with guard against re-patching
   useEffect(() => {
@@ -101,7 +118,7 @@ export function DebugProvider({ children }) {
       } catch { return true; }
     };
     console.warn = (...args) => { try { orig.warn?.(...args); } catch {} stableAddLog('warn', ...args); try { if (shouldBreadcrumb(args)) breadcrumb('warn', args.map(a => stringifySafe(a)).join(' ')); } catch {} };
-    console.error = (...args) => { try { orig.error?.(...args); } catch {} stableAddLog('error', ...args); try { if (shouldBreadcrumb(args)) breadcrumb('error', args.map(a => stringifySafe(a)).join(' ')); } catch {} };
+    console.error = (...args) => { try { orig.error?.(...args); } catch {} stableAddLog('error', ...args); try { if (shouldBreadcrumb(args)) breadcrumb('error', args.map(a => stringifySafe(a)).join(' ')); } catch {} try { flashOverlay(3500); } catch {} };
     
     return () => {
       try {
@@ -118,6 +135,7 @@ export function DebugProvider({ children }) {
     showOverlay,
     setShowOverlay,
     toggleOverlay,
+    flashOverlay,
     captureConsole,
     setCaptureConsole,
     logLevel,
@@ -125,7 +143,7 @@ export function DebugProvider({ children }) {
     logs,
     addLog,
     clearLogs,
-  }), [showOverlay, captureConsole, logLevel, logs, addLog, clearLogs, toggleOverlay]);
+  }), [showOverlay, captureConsole, logLevel, logs, addLog, clearLogs, toggleOverlay, flashOverlay]);
 
   return (
     <DebugContext.Provider value={value}>

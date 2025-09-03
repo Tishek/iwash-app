@@ -13,6 +13,7 @@ import Animated, {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import BottomSheetPanel from './BottomSheetPanel';
 import { breadcrumb } from '../utils/crashTrace';
+import { useDebug } from '../debug/useDebug';
 
 const ENABLE_SWIPE = true;       // swipe zapnutý
 const VELOCITY_SNAP = 900;
@@ -57,6 +58,7 @@ export default function BottomSheetContainer(props) {
   const insets = useSafeAreaInsets();
   const { height: SCREEN_H } = Dimensions.get('window');
   const listGestureRef = useRef(null);
+  const { flashOverlay } = (function useMaybeDebug() { try { return useDebug() || {}; } catch { return {}; } })();
 
   // Snap body (číselné px)
   const COLLAPSED_PX = useMemo(() => {
@@ -203,6 +205,7 @@ export default function BottomSheetContainer(props) {
   const handleSetFilterMode = (key) => {
     try { console.warn('[filters] click ->', key); } catch {}
     try { breadcrumb('filter_click', key); } catch {}
+    try { flashOverlay?.(1800); } catch {}
     if (filterBusyRef.current) { try { console.warn('[filters] busy; skip'); } catch {} ; return; }
     filterBusyRef.current = true;
     // Pokud je stejný mód, nedělej nic
