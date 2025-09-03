@@ -45,17 +45,33 @@ export default function ListContent({
   // Pokud je budeš volat z workletu, použij: runOnJS(scrollToIndexJS)(i)
   const scrollToIndexJS = useCallback(
     (index) => {
-      const i = Math.max(0, Math.min(index ?? 0, Math.max(filteredPlaces.length - 1, 0)));
-      const offset = i * ITEM_H;
-      listRef?.current?.scrollToOffset?.({ offset, animated: true });
+      try {
+        const i = Math.max(0, Math.min(index ?? 0, Math.max(filteredPlaces.length - 1, 0)));
+        const offset = i * ITEM_H;
+        if (!listRef?.current?.scrollToOffset) {
+          try { console.warn('[list] scrollToOffset missing ref'); } catch {}
+          return;
+        }
+        listRef.current.scrollToOffset({ offset, animated: true });
+      } catch (e) {
+        try { console.error('[list] scrollToIndexJS failed', e?.message || e); } catch {}
+      }
     },
     [filteredPlaces.length, listRef]
   );
 
   const scrollToOffsetJS = useCallback(
     (offsetPx) => {
-      const offset = Math.max(0, offsetPx ?? 0);
-      listRef?.current?.scrollToOffset?.({ offset, animated: true });
+      try {
+        const offset = Math.max(0, offsetPx ?? 0);
+        if (!listRef?.current?.scrollToOffset) {
+          try { console.warn('[list] scrollToOffset missing ref'); } catch {}
+          return;
+        }
+        listRef.current.scrollToOffset({ offset, animated: true });
+      } catch (e) {
+        try { console.error('[list] scrollToOffsetJS failed', e?.message || e); } catch {}
+      }
     },
     [listRef]
   );

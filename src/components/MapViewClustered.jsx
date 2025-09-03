@@ -32,6 +32,7 @@ export default function MapViewClustered({
     if (!children) return null;
     try {
       const childArray = React.Children.toArray(children);
+      // Zachovej původní pořadí i klíče – viz React docs o stabilních keys
       const validChildArray = childArray.filter(child => React.isValidElement(child));
       if (freezeChildren) {
         if (!prevChildrenRef.current) prevChildrenRef.current = validChildArray;
@@ -92,8 +93,9 @@ export default function MapViewClustered({
       showsScale={false}
       clusteringEnabled={!!clusteringEnabled}
       spiralEnabled
-      radius={Math.max(60, Math.min((clusterRadiusPx || 120) + 40, 320))} // Earlier clustering
-      extent={256}
+      radius={Math.max(100, Math.min((clusterRadiusPx || 160) + 80, 360))} // Much earlier clustering
+      minPoints={1}
+      extent={512}
       clusterColor="#111"
       clusterTextColor="#fff"
       renderCluster={safeRenderCluster}

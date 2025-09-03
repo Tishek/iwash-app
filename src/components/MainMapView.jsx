@@ -159,9 +159,21 @@ export default function MainMapView({
     if (suspendMarkers) return [];
     try {
       if (!Array.isArray(filteredPlaces)) return [];
-      const out = [];
+      // Stabilní pořadí a žádné duplikáty (prevence key/ordering warningů)
+      const seen = new Set();
+      const stable = [];
       for (let i = 0; i < filteredPlaces.length; i++) {
         const p = filteredPlaces[i];
+        if (!p || seen.has(p.id)) continue;
+        seen.add(p.id);
+        stable.push(p);
+      }
+      // Stabilní řazení podle id (nezávislé na rychlých změnách pořadí)
+      stable.sort((a, b) => (String(a.id) < String(b.id) ? -1 : 1));
+
+      const out = [];
+      for (let i = 0; i < stable.length; i++) {
+        const p = stable[i];
         const loc = p?.location;
         if (!p || !loc || typeof loc.latitude !== 'number' || typeof loc.longitude !== 'number') continue;
         const pid = String(p.id);
@@ -194,6 +206,16 @@ export default function MainMapView({
     }
   }, [filteredPlaces, selectedId, getPinScale, isFav, onMarkerPress, suspendMarkers]);
 
+  // Force-remount the ClusteredMapView when the marker identity set changes.
+  // This fully resets the internal index map of rn-maps-clustering and
+  // prevents any stale indices when children change rapidly.
+  const clusterKey = React.useMemo(() => {
+    try {
+      const ids = Array.isArray(filteredPlaces) ? filteredPlaces.map((p) => String(p.id)).join(',') : 'none';
+      return `cmv:${ids}`;
+    } catch { return 'cmv:none'; }
+  }, [filteredPlaces]);
+
 
   // ❗Return až po všech hookách – pořadí hooků zůstává stejné v každém renderu
   if (!region) {
@@ -205,6 +227,7 @@ export default function MainMapView({
     <MapErrorBoundary>
       <View style={{ flex: 1 }}>
         <MapViewClustered
+          key={clusterKey}
           mapRef={mapRef}
           region={region}
           onRegionChangeComplete={handleRegionChangeComplete}

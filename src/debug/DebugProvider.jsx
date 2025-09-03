@@ -136,9 +136,12 @@ export function DebugProvider({ children }) {
     console.error = (...args) => {
       try { orig.error?.(...args); } catch {}
       if (!overlayRenderingRef.current) {
-        // Demote některé React dev warningy (typicky "unique key") na warn, ať to nedělá červený screen
+        // Demote některé React dev warningy na warn (bez červené obrazovky)
         const combined = args.map(a => stringifySafe(a)).join(' ');
-        const isBenignKeyWarn = /unique "key" prop/i.test(combined) || /warning-keys/i.test(combined);
+        const isBenignKeyWarn = /unique\s+"?key"?\s+prop/i.test(combined)
+          || /Each child in a list should have a unique/i.test(combined)
+          || /warning-keys/i.test(combined)
+          || /ForwardRef/i.test(combined);
         if (isBenignKeyWarn) {
           if (showOverlay && captureConsole) stableAddLog('warn', ...args);
           try { if (shouldBreadcrumb(args)) breadcrumb('warn', combined); } catch {}
