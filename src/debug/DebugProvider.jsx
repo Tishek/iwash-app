@@ -16,6 +16,11 @@ export function DebugProvider({ children }) {
   const originalsRef = useRef({});
   const flashTimerRef = useRef(null);
   const openedByFlashRef = useRef(false);
+  const overlayRenderingRef = useRef(false);
+
+  const setOverlayRendering = useCallback((v) => {
+    overlayRenderingRef.current = !!v;
+  }, []);
 
   // Load persisted prefs
   useEffect(() => {
@@ -114,11 +119,29 @@ export function DebugProvider({ children }) {
         // Nezapisuj echo při čtení trace (jinak nafukujeme logy)
         if (s.includes('[LastSessionTrace]')) return false;
         if (s.includes('[trace:')) return false;
+        // Odfiltruj vysoce-frekvenční šum
+        if (s.includes('[filters] rebuild')) return false;
+        if (s.includes('[filters] result length')) return false;
+        if (s.includes('[MainMapView] No region provided!')) return false;
         return true;
       } catch { return true; }
     };
-    console.warn = (...args) => { try { orig.warn?.(...args); } catch {} stableAddLog('warn', ...args); try { if (shouldBreadcrumb(args)) breadcrumb('warn', args.map(a => stringifySafe(a)).join(' ')); } catch {} };
-    console.error = (...args) => { try { orig.error?.(...args); } catch {} stableAddLog('error', ...args); try { if (shouldBreadcrumb(args)) breadcrumb('error', args.map(a => stringifySafe(a)).join(' ')); } catch {} try { flashOverlay(3500); } catch {} };
+    console.warn = (...args) => {
+      try { orig.warn?.(...args); } catch {}
+      if (overlayRenderingRef.current) return;
+      // Do overlay logs pouze když je otevřený; breadcrumbs zapisujeme vždy
+      if (showOverlay && captureConsole) stableAddLog('warn', ...args);
+      try { if (shouldBreadcrumb(args)) breadcrumb('warn', args.map(a => stringifySafe(a)).join(' ')); } catch {}
+    };
+    console.error = (...args) => {
+      try { orig.error?.(...args); } catch {}
+      if (!overlayRenderingRef.current) {
+        if (showOverlay && captureConsole) stableAddLog('error', ...args);
+        try { if (shouldBreadcrumb(args)) breadcrumb('error', args.map(a => stringifySafe(a)).join(' ')); } catch {}
+        // Never mutate React state during render: defer overlay flash
+        try { setTimeout(() => { try { flashOverlay(3500); } catch {} }, 0); } catch {}
+      }
+    };
     
     return () => {
       try {
@@ -136,6 +159,7 @@ export function DebugProvider({ children }) {
     setShowOverlay,
     toggleOverlay,
     flashOverlay,
+    setOverlayRendering,
     captureConsole,
     setCaptureConsole,
     logLevel,
@@ -143,7 +167,7 @@ export function DebugProvider({ children }) {
     logs,
     addLog,
     clearLogs,
-  }), [showOverlay, captureConsole, logLevel, logs, addLog, clearLogs, toggleOverlay, flashOverlay]);
+  }), [showOverlay, captureConsole, logLevel, logs, addLog, clearLogs, toggleOverlay, flashOverlay, setOverlayRendering]);
 
   return (
     <DebugContext.Provider value={value}>

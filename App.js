@@ -66,7 +66,7 @@ try {
   }
 } catch {}
 
-LogBox.ignoreLogs(['No cluster with the specified id']);
+LogBox.ignoreLogs(['No cluster with the specified id', 'No region provided!']);
 
 function AppInner() {
   const mapRef = useRef(null);
@@ -94,9 +94,13 @@ function AppInner() {
 
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isSheetAnimating, setIsSheetAnimating] = useState(false);
+  const [isFilterTransitioning, setIsFilterTransitioning] = useState(false);
+  const mapPlacesRef = useRef([]);
+  const lastUiActionRef = useRef({ type: null, ts: 0, payload: null });
 
   // Vypiš logy z minulé session (pokud app předtím spadla) a pak je smaž
   useEffect(() => {
+    try { breadcrumb('AppMount', {}); } catch {}
     (async () => {
       try {
         const trace = await readTrace();
@@ -112,11 +116,13 @@ function AppInner() {
         try { console.warn('[LastSessionTrace] read failed'); } catch {}
       }
     })();
+    return () => { try { breadcrumb('AppUnmount', {}); } catch {} };
   }, []);
 
-  // Při odchodu do pozadí nebo neaktivity zkus perzistovat trace okamžitě
+  // Při odchodu do pozadí/neaktivity loguj AppState + perzistuj trace
   useEffect(() => {
     const sub = AppState.addEventListener('change', (s) => {
+      try { breadcrumb('AppState', { state: s, lastAction: lastUiActionRef.current }); } catch {}
       if (s === 'background' || s === 'inactive') {
         try { require('./src/utils/crashTrace').forceFlush?.(); } catch {}
       }
@@ -171,6 +177,13 @@ function AppInner() {
     favoritesData,
     searchCenter,
   });
+
+  // Map vrstva dostává stabilní sadu míst během přepínání filtru
+  useEffect(() => {
+    if (!isFilterTransitioning) {
+      mapPlacesRef.current = filteredPlaces;
+    }
+  }, [filteredPlaces, isFilterTransitioning]);
 
   const { getPinScale } = usePinSelection(selectedId);
   const { ringScale, ringOpacity } = useAuraPulse();
@@ -296,6 +309,24 @@ function AppInner() {
   const { toggleOverlay } =
     (function useMaybeDebug() { try { return useDebug() || {}; } catch { return {}; } })();
 
+  // Signály pro bezpečné přepínání filtru (mapu dočasně zmrazíme)
+  const onFilterChangeStart = useCallback((key) => {
+    const ts = Date.now();
+    try { breadcrumb('filter_transition_start', { key, ts }); } catch {}
+    lastUiActionRef.current = { type: 'filter_transition_start', ts, payload: key };
+    setIsFilterTransitioning(true);
+  }, []);
+
+  const onFilterChangeEnd = useCallback((key) => {
+    // necháme ještě proběhnout případné animace/layouty
+    setTimeout(() => {
+      const ts = Date.now();
+      try { breadcrumb('filter_transition_end', { key, ts }); } catch {}
+      lastUiActionRef.current = { type: 'filter_transition_end', ts, payload: key };
+      setIsFilterTransitioning(false);
+    }, 0);
+  }, []);
+
   // Callbacks z BottomSheetu – pro pauzu fetchů a centrování po snapu
   const onSheetSnapStart = useCallback(() => {
     try { console.warn('[sheet] snap start'); } catch {}
@@ -347,7 +378,7 @@ function AppInner() {
         clusterRadiusPx={clusterRadiusPx}
         searchCenter={searchCenter}
         radiusM={radiusM}
-        filteredPlaces={filteredPlaces}
+        filteredPlaces={isFilterTransitioning ? mapPlacesRef.current : filteredPlaces}
         selectedId={selectedId}
         onMarkerPress={onMarkerPress}
         getPinScale={getPinScale}
@@ -415,6 +446,8 @@ function AppInner() {
         onNavigatePreferred={onNavigatePreferred}
         openNavigation={openNavigation}
         focusPlace={focusPlace}
+        onFilterChangeStart={onFilterChangeStart}
+        onFilterChangeEnd={onFilterChangeEnd}
       />
 
       <SettingsContainer

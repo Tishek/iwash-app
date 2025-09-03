@@ -53,6 +53,8 @@ export default function BottomSheetContainer(props) {
     onNavigatePreferred,
     openNavigation,
     focusPlace,
+    onFilterChangeStart,
+    onFilterChangeEnd,
   } = props;
 
   const insets = useSafeAreaInsets();
@@ -205,9 +207,10 @@ export default function BottomSheetContainer(props) {
   const handleSetFilterMode = (key) => {
     try { console.warn('[filters] click ->', key); } catch {}
     try { breadcrumb('filter_click', key); } catch {}
-    try { flashOverlay?.(1800); } catch {}
+    // Nechte overlay blikat pouze na skutečné chyby, ne při kliku na filtr
     if (filterBusyRef.current) { try { console.warn('[filters] busy; skip'); } catch {} ; return; }
     filterBusyRef.current = true;
+    try { onFilterChangeStart?.(key); } catch {}
     // Pokud je stejný mód, nedělej nic
     if (key === filterMode) { filterBusyRef.current = false; return; }
     try { setSelectedId?.(null); } catch {}
@@ -220,7 +223,8 @@ export default function BottomSheetContainer(props) {
       } catch (e) {
         try { console.error('[filters] setFilterMode failed:', e); } catch {}
       } finally {
-        setTimeout(() => { filterBusyRef.current = false; }, 140);
+        // Delší lock proti rychlým sekvenčním klikům (iOS stabilita)
+        setTimeout(() => { filterBusyRef.current = false; try { onFilterChangeEnd?.(key); } catch {} }, 260);
       }
     });
   };

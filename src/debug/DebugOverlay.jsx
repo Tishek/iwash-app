@@ -1,11 +1,20 @@
-import React, { useContext, useMemo } from 'react';
+import React, { useContext, useEffect, useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { DebugContext } from './DebugProvider';
 
 export default function DebugOverlay({ styles }) {
-  const { showOverlay, toggleOverlay, logs, clearLogs, captureConsole, setCaptureConsole, logLevel, setLogLevel } = useContext(DebugContext);
+  const { showOverlay, toggleOverlay, logs, clearLogs, captureConsole, setCaptureConsole, logLevel, setLogLevel, setOverlayRendering } = useContext(DebugContext);
+  // Hooks must not be conditional: compute filtered always, render conditionally later
+  const filtered = useMemo(() => {
+    try { return logs.filter(l => levelAllowed(l.level, logLevel)); }
+    catch { return []; }
+  }, [logs, logLevel]);
+  // Označ aktivní vykreslení overlaye (zamezí state update během renderu)
+  useEffect(() => {
+    setOverlayRendering(!!showOverlay);
+    return () => setOverlayRendering(false);
+  }, [showOverlay, setOverlayRendering]);
   if (!showOverlay) return null;
-  const filtered = useMemo(() => logs.filter(l => levelAllowed(l.level, logLevel)), [logs, logLevel]);
   return (
     <View style={[overlayStyles.wrap]}>
       <View style={overlayStyles.header}>
@@ -68,5 +77,3 @@ const overlayStyles = {
   row: { marginBottom: 6 },
   empty: { color: '#94A3B8', fontStyle: 'italic' },
 };
-
-

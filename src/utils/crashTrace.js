@@ -5,7 +5,6 @@ const MAX_ITEMS = 120;
 // Types that should write-through immediately to survive sudden native crashes
 const IMMEDIATE_TYPES = new Set([
   'error',
-  'warn',
   'GlobalError',
   'UnhandledPromiseRejection',
   'sheet_pan_begin',
@@ -18,6 +17,7 @@ const IMMEDIATE_TYPES = new Set([
 let buffer = [];
 let dirty = false;
 let flushTimer = null;
+let lastForceFlushTs = 0;
 
 function push(entry) {
   try {
@@ -46,8 +46,15 @@ export function breadcrumb(type, payload) {
   push({ ts, type, payload });
   // For critical events, write-through immediately to maximize persistence
   if (IMMEDIATE_TYPES.has(type)) {
-    // Avoid blocking UI thread: fire-and-forget
-    forceFlush().catch(() => {});
+    const now = Date.now();
+    // Rate-limit immediate flushes to avoid I/O storms on iOS
+    if (now - lastForceFlushTs > 600) {
+      lastForceFlushTs = now;
+      forceFlush().catch(() => {});
+    } else {
+      // fall back to scheduled flush
+      scheduleFlush();
+    }
   }
 }
 
