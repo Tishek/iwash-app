@@ -1,6 +1,6 @@
 // src/components/BottomSheetContainer.jsx
 import React, { useMemo, useEffect, useRef, useState } from 'react';
-import { StyleSheet, Platform, Dimensions } from 'react-native';
+import { StyleSheet, Platform, Dimensions, Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { DEV_INFO } from '../utils/devlog';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -204,6 +204,19 @@ export default function BottomSheetContainer(props) {
     bottom: animatedY.value - EXP,
   }));
 
+  // Keep animation in sync with external isExpanded changes
+  // If parent toggles isExpanded (e.g., after search), animate to the target snap
+  React.useEffect(() => {
+    try {
+      const currentlyExpanded = nameForPoint(animatedY.value) !== 'COLLAPSED';
+      if (isExpanded !== currentlyExpanded && !isAnimatingRef.current) {
+        animateToJS(isExpanded ? points.HALF : points.COLLAPSED);
+      }
+    } catch {}
+    // We intentionally depend on isExpanded and the numeric points only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isExpanded, points.HALF, points.COLLAPSED]);
+
   const handleSetFilterMode = (key) => {
     try { console.warn('[filters] click ->', key); } catch {}
     try { breadcrumb('filter_click', key); } catch {}
@@ -219,9 +232,12 @@ export default function BottomSheetContainer(props) {
       try {
         console.warn('[filters] setFilterMode', key);
         try { breadcrumb('filter_set', key); } catch {}
-        setFilterMode?.(key);
+        // drobná prodleva ať se UI uklidní, minimalizuje nativní pády
+        setTimeout(() => { try { setFilterMode?.(key); } catch (e) { try { console.error('[filters] setFilterMode failed (delayed):', e); } catch {} } }, 80);
       } catch (e) {
         try { console.error('[filters] setFilterMode failed:', e); } catch {}
+        try { Alert.alert('Chyba filtru', String(e?.message ?? e)); } catch {}
+        try { runOnJS(onFilterChangeEnd)?.(key); } catch {}
       } finally {
         // Delší lock proti rychlým sekvenčním klikům (iOS stabilita)
         setTimeout(() => { filterBusyRef.current = false; try { onFilterChangeEnd?.(key); } catch {} }, 260);

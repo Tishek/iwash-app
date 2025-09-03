@@ -7,12 +7,23 @@ const IMMEDIATE_TYPES = new Set([
   'error',
   'GlobalError',
   'UnhandledPromiseRejection',
+  'warn',
   'sheet_pan_begin',
   'sheet_pan_end',
   'sheet_snap_start',
   'sheet_snap_end',
   'filter_click',
   'filter_set',
+  'filter_transition_start',
+  'filter_transition_end',
+  'AppState',
+  'list_item_press',
+  'place_focus_center',
+  'place_focus_scroll',
+  'marker_press',
+  'marker_center',
+  'marker_scroll',
+  'scroll_to_index_failed',
 ]);
 let buffer = [];
 let dirty = false;

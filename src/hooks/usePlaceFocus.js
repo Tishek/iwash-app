@@ -1,6 +1,7 @@
 // src/hooks/usePlaceFocus.js
 import * as Haptics from 'expo-haptics';
 import { runOnJS } from 'react-native-reanimated';
+import { breadcrumb } from '../utils/crashTrace';
 import { ITEM_H, PIN_SELECTED_SCALE, TARGET_VISIBLE_SPAN_M } from '../utils/constants';
 
 // Pomůcka: spustí fn na JS vlákně i když jsme uvnitř workletu.
@@ -25,7 +26,13 @@ export function usePlaceFocus({
   disableFollow,
   pendingFocusCoordRef,
   pendingFocusScaleRef,
+  onFocusStart,
+  onFocusEnd,
 }) {
+  const guardRef = { press: { current: false } };
+  try { if (!usePlaceFocus._pressGuard) usePlaceFocus._pressGuard = { current: false }; } catch {}
+  // shared module-level guard (extra safety across re-renders)
+  const pressGuardRef = usePlaceFocus._pressGuard || guardRef.press;
   // Stabilní JS helper – upraví pending refy mimo worklet kontext
   const setPendingFocusJS = (loc, scale, coordRef, scaleRef) => {
     try {
@@ -67,6 +74,15 @@ export function usePlaceFocus({
     callFromAnyThread((v) => setIsExpanded?.(v), next);
 
   const focusPlace = (place) => {
+    try { onFocusStart?.(); } catch {}
+    try { breadcrumb('list_item_press', { id: place?.id, name: place?.name }); } catch {}
+    if (pressGuardRef.current) {
+      try { breadcrumb('place_focus_skipped_guard', { id: place?.id }); } catch {}
+      return;
+    }
+    pressGuardRef.current = true;
+    setTimeout(() => { pressGuardRef.current = false; }, 260);
+
     safeHaptics();
     disableFollow?.();
 
@@ -79,12 +95,15 @@ export function usePlaceFocus({
 
     // Posuň mapu: pokud list ještě není rozbalený, počkej až se rozbalí,
     // a teprve potom střed posuň (jinak by mohl být pin zakryt listem)
-    const doCenter = () => moveMarkerToVisibleCenter(place.location, {
+    const doCenter = () => {
+      try { breadcrumb('place_focus_center', { id: place?.id }); } catch {}
+      return moveMarkerToVisibleCenter(place.location, {
       zoomFactor: isExpanded ? 0.68 : 1.0,
       minDelta: 0.01,
       pinScale: PIN_SELECTED_SCALE,
       targetSpanM: TARGET_VISIBLE_SPAN_M,
-    });
+      });
+    };
 
     // Připrav pending refy a případně rozbal list
     if (!isExpanded) {
@@ -99,10 +118,14 @@ export function usePlaceFocus({
 
     // Scroll na položku
     const idx = idToIndex[place.id];
+    try { breadcrumb('place_focus_scroll', { id: place?.id, idx }); } catch {}
     callFromAnyThread(scheduleScrollJS, idx, isExpanded ? 120 : 320);
+    setTimeout(() => { try { onFocusEnd?.(); } catch {} }, 650);
   };
 
   const onMarkerPress = (place) => {
+    try { onFocusStart?.(); } catch {}
+    try { breadcrumb('marker_press', { id: place?.id }); } catch {}
     if (selectedId === place.id && isExpanded) return;
 
     disableFollow?.();
@@ -113,12 +136,15 @@ export function usePlaceFocus({
     }, place);
 
     // Posuň mapu – pokud list není rozbalený, počkej na rozbalení
-    const doCenter = () => moveMarkerToVisibleCenter(place.location, {
+    const doCenter = () => {
+      try { breadcrumb('marker_center', { id: place?.id }); } catch {}
+      return moveMarkerToVisibleCenter(place.location, {
       zoomFactor: isExpanded ? 0.7 : 1.0,
       minDelta: 0.01,
       pinScale: PIN_SELECTED_SCALE,
       targetSpanM: TARGET_VISIBLE_SPAN_M,
-    });
+      });
+    };
 
     if (!isExpanded) {
       callFromAnyThread((loc, scale) => setPendingFocusJS(loc, scale, pendingFocusCoordRef, pendingFocusScaleRef),
@@ -132,7 +158,9 @@ export function usePlaceFocus({
 
     const idx = idToIndex[place.id];
     // když už je sheet otevřený, stačí kratší delay; jinak delší
+    try { breadcrumb('marker_scroll', { id: place?.id, idx }); } catch {}
     callFromAnyThread(scheduleScrollJS, idx, isExpanded ? 120 : 320);
+    setTimeout(() => { try { onFocusEnd?.(); } catch {} }, 650);
   };
 
   return { focusPlace, onMarkerPress };

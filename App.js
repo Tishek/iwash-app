@@ -37,6 +37,7 @@ import { useTopOcclusion } from './src/hooks/useTopOcclusion';
 import { useSearchControls } from './src/hooks/useSearchControls';
 import { DebugProvider } from './src/debug/DebugProvider';
 import DebugOverlay from './src/debug/DebugOverlay';
+import CrashBanner from './src/components/CrashBanner';
 import { readTrace, clearTrace, breadcrumb } from './src/utils/crashTrace';
 import ErrorBoundary from './src/components/ErrorBoundary.jsx';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -50,7 +51,7 @@ try {
   // eslint-disable-next-line no-undef
   global.ErrorUtils?.setGlobalHandler?.((err, isFatal) => {
     try { console.error('[GlobalError]', isFatal ? 'FATAL' : 'non-fatal', err); } catch {}
-    try { breadcrumb('GlobalError', String(err?.message || err)); } catch {}
+    try { breadcrumb('GlobalError', { message: String(err?.message || err), stack: String(err?.stack || ''), isFatal }); } catch {}
     if (typeof orig === 'function') { try { orig(err, isFatal); } catch {} }
   });
 } catch {}
@@ -59,7 +60,7 @@ try {
 try {
   const logRejection = (e) => {
     try { console.error('[UnhandledPromiseRejection]', e?.reason ?? e); } catch {}
-    try { breadcrumb('UnhandledPromiseRejection', String(e?.reason ?? e)); } catch {}
+    try { breadcrumb('UnhandledPromiseRejection', { reason: String(e?.reason ?? e), stack: String(e?.reason?.stack || e?.stack || '') }); } catch {}
   };
   if (typeof globalThis.addEventListener === 'function') {
     globalThis.addEventListener('unhandledrejection', logRejection);
@@ -95,10 +96,13 @@ function AppInner() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [isSheetAnimating, setIsSheetAnimating] = useState(false);
   const [isFilterTransitioning, setIsFilterTransitioning] = useState(false);
+  const [isFocusing, setIsFocusing] = useState(false);
+  const [clusterHold, setClusterHold] = useState(false);
   const mapPlacesRef = useRef([]);
   const lastUiActionRef = useRef({ type: null, ts: 0, payload: null });
 
   // Vypiš logy z minulé session (pokud app předtím spadla) a pak je smaž
+  const [crashReport, setCrashReport] = useState(null);
   useEffect(() => {
     try { breadcrumb('AppMount', {}); } catch {}
     (async () => {
@@ -107,6 +111,20 @@ function AppInner() {
         if (trace?.items?.length) {
           console.warn('[LastSessionTrace]', trace.items.length, 'events, last ts:', new Date(trace.ts).toISOString());
           trace.items.forEach((it) => console.warn(`[trace:${it.type}]`, it.ts, it.payload));
+          // Build a short report for in-app banner
+          try {
+            const last = trace.items[trace.items.length - 1];
+            const prev = trace.items[trace.items.length - 2];
+            const likely = prev?.type && last?.type ? `${prev.type} → ${last.type}` : (last?.type || '');
+            // Sestav posledních pár významných eventů (error/warn/*_press/*_center/*_scroll)
+            const lines = trace.items
+              .slice(-12)
+              .map((it) => {
+                const p = typeof it.payload === 'string' ? it.payload : JSON.stringify(it.payload || {});
+                return `${new Date(it.ts).toLocaleTimeString()} • ${it.type}${p ? ` — ${p}` : ''}`;
+              });
+            setCrashReport({ title: 'Aplikace byla minule ukončena', detail: `Poslední události: ${likely}`, list: lines });
+          } catch {}
           await clearTrace();
         } else {
           // Make it explicit when there was nothing to read (helps debugging)
@@ -184,6 +202,9 @@ function AppInner() {
       mapPlacesRef.current = filteredPlaces;
     }
   }, [filteredPlaces, isFilterTransitioning]);
+
+  // Jednotný zdroj míst pro mapu i clustering během přechodu filtru
+  const filteredPlacesForMap = isFilterTransitioning ? mapPlacesRef.current : filteredPlaces;
 
   const { getPinScale } = usePinSelection(selectedId);
   const { ringScale, ringOpacity } = useAuraPulse();
@@ -263,6 +284,8 @@ function AppInner() {
     disableFollow,
     pendingFocusCoordRef,
     pendingFocusScaleRef,
+    onFocusStart: () => setIsFocusing(true),
+    onFocusEnd: () => setIsFocusing(false),
   });
 
   const {
@@ -278,7 +301,7 @@ function AppInner() {
     regionRef,
     region,
     clusterRadiusPx,
-    filteredPlaces,
+    filteredPlaces: filteredPlacesForMap,
     moveMarkerToVisibleCenter,
     centerLockRef,
   });
@@ -315,6 +338,7 @@ function AppInner() {
     try { breadcrumb('filter_transition_start', { key, ts }); } catch {}
     lastUiActionRef.current = { type: 'filter_transition_start', ts, payload: key };
     setIsFilterTransitioning(true);
+    setClusterHold(true);
   }, []);
 
   const onFilterChangeEnd = useCallback((key) => {
@@ -324,6 +348,8 @@ function AppInner() {
       try { breadcrumb('filter_transition_end', { key, ts }); } catch {}
       lastUiActionRef.current = { type: 'filter_transition_end', ts, payload: key };
       setIsFilterTransitioning(false);
+      // podrž clustering ještě krátce po změně filtru (iOS stabilita)
+      setTimeout(() => setClusterHold(false), 500);
     }, 0);
   }, []);
 
@@ -378,7 +404,7 @@ function AppInner() {
         clusterRadiusPx={clusterRadiusPx}
         searchCenter={searchCenter}
         radiusM={radiusM}
-        filteredPlaces={isFilterTransitioning ? mapPlacesRef.current : filteredPlaces}
+        filteredPlaces={filteredPlacesForMap}
         selectedId={selectedId}
         onMarkerPress={onMarkerPress}
         getPinScale={getPinScale}
@@ -396,7 +422,13 @@ function AppInner() {
         // jen abychom viděli, že se onMapReady volá (MapViewClustered loguje engine sám)
         onMapReady={() => DEV_LOG('🗺️  map ready')}
         log={(...args) => DEV_LOG('🟣 [renderCluster]', ...args)}
+        clusteringEnabled={!isFilterTransitioning && !clusterHold && !isFocusing}
+        suspendMarkers={isFilterTransitioning || isFocusing}
       />
+
+      {crashReport && (
+        <CrashBanner report={crashReport} onClose={() => setCrashReport(null)} />
+      )}
 
       <SearchControls
         isExpanded={isExpanded}

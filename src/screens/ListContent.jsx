@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, Text, FlatList, Platform } from 'react-native';
 import ListHeader from '../components/ListHeader';
 import { DEV_ERROR } from '../utils/devlog';
+import { breadcrumb } from '../utils/crashTrace';
 import FiltersRow from '../components/FiltersRow';
 import PlaceCard from '../components/PlaceCard.jsx';
 import { ITEM_H } from '../utils/constants';
@@ -68,6 +69,7 @@ export default function ListContent({
   const onScrollToIndexFailed = useCallback(
     (info) => {
       // Fallback – někdy FlatList index ještě nemá změřené layouty
+      try { breadcrumb('scroll_to_index_failed', { index: info?.index, averageItemLength: info?.averageItemLength, offset: info?.averageItemLength }); } catch {}
       const safeIndex = Math.max(
         0,
         Math.min(info?.index ?? 0, Math.max(filteredPlaces.length - 1, 0))

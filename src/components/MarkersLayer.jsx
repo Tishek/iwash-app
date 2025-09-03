@@ -38,7 +38,7 @@ export default function MarkersLayer({
       }
 
       // Ensure place has required properties
-      if (!p.id || typeof p.id !== 'string') {
+      if (!p?.id) {
         DEV_WARN('[markers] Place missing valid id:', p);
         return false;
       }
@@ -84,7 +84,7 @@ export default function MarkersLayer({
         const p = validPlaces[i];
         
         // Additional safety checks (should not be needed due to validPlaces filter, but extra safety)
-        if (!p || !p.id || typeof p.id !== 'string') {
+        if (!p || !p.id) {
           console.warn('[markers] Place missing valid id in markers generation:', p);
           continue;
         }
@@ -123,14 +123,15 @@ export default function MarkersLayer({
           p.inferredType === 'CONTACT'      ? '#111'    :
                                               '#6B7280';
 
-        const isSelected = selectedId === p.id;
+        const pid = String(p.id);
+        const isSelected = String(selectedId || '') === pid;
 
         DEV_LOG(`[markers] Rendering marker ${p.id} at ${latitude}, ${longitude}`);
 
         try {
           const marker = (
             <Marker
-              key={`place-${p.id}`} // More specific key to avoid conflicts
+              key={`place-${pid}`} // More specific key to avoid conflicts
               coordinate={{ latitude, longitude }}
               onPress={() => {
                 try {

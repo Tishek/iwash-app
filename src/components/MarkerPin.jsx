@@ -7,7 +7,8 @@ function MarkerPin({ selected, color, scale, fav }) {
     <Animated.View style={[styles.pinWrap, { transform: [{ scale }] }]}>
       {selected && <View style={[styles.pinGlow, { borderColor: color }]} />}
       <View style={[styles.pinTop, { backgroundColor: color }]} />
-      <View style={[styles.pinStem, { backgroundColor: color }]} />
+      {/* Šipka bez neprůhledného pozadí – pouze barevná hrana */}
+      <View style={[styles.pinStem, { borderTopColor: color }]} />
       {fav && (
         <View style={styles.pinFav}>
           <Text style={styles.pinFavTxt}>★</Text>

@@ -3,7 +3,9 @@ import React, { useEffect, useCallback } from 'react';
 import { View, Text } from 'react-native';
 import MapViewClustered from './MapViewClustered';
 import ClusterRenderer from './ClusterRenderer';
-import MarkersLayer from './MarkersLayer';
+import { Marker } from 'react-native-maps';
+import MarkerPin from './MarkerPin';
+import MeMarker from './MeMarker';
 import { makeClusterPressHandler } from '../utils/clusterHandlers';
 import { DEV_LOG, DEV_WARN } from '../utils/devlog';
 
@@ -14,15 +16,15 @@ class MapErrorBoundary extends React.Component {
     this.state = { hasError: false, error: null };
   }
   static getDerivedStateFromError(error) {
-    console.error('[MapErrorBoundary] Caught error:', error);
+    try { console.warn('[MapErrorBoundary] Caught error:', error); } catch {}
     return { hasError: true, error };
   }
   componentDidCatch(error, errorInfo) {
-    console.error('[MapErrorBoundary] Error details:', error, errorInfo);
+    try { console.warn('[MapErrorBoundary] Error details:', error, errorInfo); } catch {}
   }
   render() {
     if (this.state.hasError) {
-      console.error('[MapErrorBoundary] Rendering fallback due to error:', this.state.error);
+      try { console.warn('[MapErrorBoundary] Rendering fallback due to error:', this.state.error); } catch {}
       return (
         <View style={{ flex: 1, backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }}>
           <View style={{ padding: 20, backgroundColor: 'white', borderRadius: 10 }}>
@@ -62,6 +64,8 @@ export default function MainMapView({
   regionRef,
   showCrosshair,
   log,
+  clusteringEnabled = true,
+  suspendMarkers = false,
 }) {
   // Debug logging for tracking state
   useEffect(() => {
@@ -150,28 +154,46 @@ export default function MainMapView({
     log,
   ]);
 
-  // Memoize markers layer (vrátí null, když není co kreslit)
-  const markersLayer = React.useMemo(() => {
+  // Přímo renderuj Marker prvky jako děti ClusteredMapView (nutné pro clustering)
+  const placeMarkers = React.useMemo(() => {
+    if (suspendMarkers) return [];
     try {
-      if (!filteredPlaces || !Array.isArray(filteredPlaces)) return null;
-      return (
-        <MarkersLayer
-          filteredPlaces={filteredPlaces}
-          selectedId={selectedId}
-          onMarkerPress={onMarkerPress}
-          getPinScale={getPinScale}
-          isFav={isFav}
-          coords={coords}
-          ringScale={ringScale}
-          ringOpacity={ringOpacity}
-          styles={styles}
-        />
-      );
-    } catch (error) {
-      console.error('[MainMapView] Error creating MarkersLayer:', error);
-      return null;
+      if (!Array.isArray(filteredPlaces)) return [];
+      const out = [];
+      for (let i = 0; i < filteredPlaces.length; i++) {
+        const p = filteredPlaces[i];
+        const loc = p?.location;
+        if (!p || !loc || typeof loc.latitude !== 'number' || typeof loc.longitude !== 'number') continue;
+        const pid = String(p.id);
+        const isSelected = String(selectedId || '') === pid;
+        let scale = 1;
+        try { const s = getPinScale?.(pid); if (typeof s === 'number' && isFinite(s)) scale = s; } catch {}
+        const color =
+          p.inferredType === 'NONCONTACT'   ? '#2E90FA' :
+          p.inferredType === 'FULLSERVICE'  ? '#12B76A' :
+          p.inferredType === 'CONTACT'      ? '#111'    :
+                                              '#6B7280';
+        out.push(
+          <Marker
+            key={`place-${pid}`}
+            coordinate={{ latitude: loc.latitude, longitude: loc.longitude }}
+            onPress={() => { try { onMarkerPress?.(p); } catch (e) { console.error('[marker] onPress error', e); } }}
+            tracksViewChanges={false}
+            anchor={{ x: 0.5, y: 1 }}
+            zIndex={isSelected ? 999 : 1}
+            title={p.name || 'Car wash'}
+          >
+            <MarkerPin selected={isSelected} color={color} scale={scale} fav={isFav?.(pid)} />
+          </Marker>
+        );
+      }
+      return out;
+    } catch (e) {
+      console.error('[MainMapView] placeMarkers failed:', e);
+      return [];
     }
-  }, [filteredPlaces, selectedId, onMarkerPress, getPinScale, isFav, coords, ringScale, ringOpacity, styles]);
+  }, [filteredPlaces, selectedId, getPinScale, isFav, onMarkerPress, suspendMarkers]);
+
 
   // ❗Return až po všech hookách – pořadí hooků zůstává stejné v každém renderu
   if (!region) {
@@ -192,8 +214,21 @@ export default function MainMapView({
           radiusM={radiusM}
           onMapReady={handleMapReady}
           renderCluster={renderCluster}
+          clusteringEnabled={clusteringEnabled}
+          freezeChildren={suspendMarkers}
         >
-          {markersLayer}
+          {/* Kružnice vyhledávacího okruhu necháváme, není klastrována */}
+          {placeMarkers}
+          {/* MeMarker jako vnořená komponenta – nebude klastrován */}
+          {coords ? (
+            <MeMarker
+              key="me-marker"
+              coords={coords}
+              ringScale={ringScale}
+              ringOpacity={ringOpacity}
+              styles={styles}
+            />
+          ) : null}
         </MapViewClustered>
 
         {showCrosshair && styles?.crosshair && styles?.crossDot && (

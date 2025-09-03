@@ -66,8 +66,9 @@ export function useVisibleCentering({
       latitudeDelta: nextLatDelta,
       longitudeDelta: nextLonDelta,
     }, duration);
+    // Vrať promise, která se resolve-ne po dokončení animace
+    await new Promise((r) => setTimeout(r, duration + 60));
   };
 
   return { moveMarkerToVisibleCenter, centerLockRef };
 }
-

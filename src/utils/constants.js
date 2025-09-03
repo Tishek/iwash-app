@@ -5,10 +5,10 @@ export const MAX_M = 5000;
 export const STEP_M = 100;
 export const MAX_RESULTS = 60;
 
-export const PIN_SELECTED_SCALE = 1.35;
-export const PIN_TOP_H = 18;
-export const PIN_STEM_H = 10;
-export const PIN_STEM_MARGIN = 1;
+export const PIN_SELECTED_SCALE = 1.3; // o chlup menší, protože pin je větší
+export const PIN_TOP_H = 28;      // odpovídá styles.pinTop
+export const PIN_STEM_H = 10;     // odpovídá styles.pinStem borderTopWidth
+export const PIN_STEM_MARGIN = 3; // odpovídá styles.pinStem marginTop
 export const PIN_ANCHOR_OFFSET_BASE = PIN_STEM_H + PIN_STEM_MARGIN + PIN_TOP_H / 2;
 
 export const TARGET_VISIBLE_SPAN_M = 1000;

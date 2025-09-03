@@ -136,8 +136,16 @@ export function DebugProvider({ children }) {
     console.error = (...args) => {
       try { orig.error?.(...args); } catch {}
       if (!overlayRenderingRef.current) {
+        // Demote některé React dev warningy (typicky "unique key") na warn, ať to nedělá červený screen
+        const combined = args.map(a => stringifySafe(a)).join(' ');
+        const isBenignKeyWarn = /unique "key" prop/i.test(combined) || /warning-keys/i.test(combined);
+        if (isBenignKeyWarn) {
+          if (showOverlay && captureConsole) stableAddLog('warn', ...args);
+          try { if (shouldBreadcrumb(args)) breadcrumb('warn', combined); } catch {}
+          return;
+        }
         if (showOverlay && captureConsole) stableAddLog('error', ...args);
-        try { if (shouldBreadcrumb(args)) breadcrumb('error', args.map(a => stringifySafe(a)).join(' ')); } catch {}
+        try { if (shouldBreadcrumb(args)) breadcrumb('error', combined); } catch {}
         // Never mutate React state during render: defer overlay flash
         try { setTimeout(() => { try { flashOverlay(3500); } catch {} }, 0); } catch {}
       }
