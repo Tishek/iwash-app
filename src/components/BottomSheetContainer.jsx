@@ -87,6 +87,7 @@ export default function BottomSheetContainer(props) {
   // Shared values – jedna proměnná pro výšku sheetu
   const animatedY = useSharedValue(isExpanded ? points.HALF : points.COLLAPSED);
   const ctx = useSharedValue(0);
+  const sampleGuard = useSharedValue(0);
   const isAnimatingRef = useRef(false);
   const [isFullyExpanded, setIsFullyExpanded] = useState(false);
   const filterBusyRef = useRef(false);
@@ -95,6 +96,7 @@ export default function BottomSheetContainer(props) {
   const markNotAnimatingJS = () => { try { isAnimatingRef.current = false; } catch {} };
   const panBeginLogJS = () => { try { breadcrumb('sheet_pan_begin', {}); } catch {} };
   const panEndLogJS = () => { try { breadcrumb('sheet_pan_end', {}); } catch {} };
+  const panNearHalfJS = (payload) => { try { breadcrumb('sheet_pan_near_half', payload); } catch {} };
 
   const nameForPoint = (p) => {
     if (Math.abs(p - points.COLLAPSED) < 2) return 'COLLAPSED';
@@ -157,6 +159,11 @@ export default function BottomSheetContainer(props) {
       const delta = -e.translationY; // nahoru = +
       const next = Math.min(Math.max(COLL, ctx.value + delta), EXP);
       animatedY.value = next;
+      // Jednorázový vzorek poblíž HALF (pomůže zjistit pád uprostřed gesta)
+      if (sampleGuard.value === 0 && Math.abs(next - HALF) <= 12) {
+        sampleGuard.value = 1;
+        try { runOnJS(panNearHalfJS)({ y: Math.round(next), vy: Math.round(-e.velocityY) }); } catch {}
+      }
     })
     .onEnd((e) => {
       'worklet';
@@ -184,6 +191,7 @@ export default function BottomSheetContainer(props) {
     .onFinalize(() => {
       // Fires for both success and cancel/fail
       try { runOnJS(panEndLogJS)(); } catch {}
+      sampleGuard.value = 0;
     });
 
   // Výška panelu je vždy EXP (plná), jezdíme přes bottom

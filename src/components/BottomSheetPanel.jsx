@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, Pressable, Text, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
+import { breadcrumb } from '../utils/crashTrace';
 import ListContent from '../screens/ListContent.jsx';
 
 export default function BottomSheetPanel({
@@ -49,7 +50,11 @@ export default function BottomSheetPanel({
     >
       
       {/* Handle (úchytka) – tap stále toggluje, swipe řeší kontejner */}
-      <Pressable onPress={() => setIsExpanded(!isExpanded)}
+      <Pressable onPress={() => {
+        try { console.warn('[sheet] tap toggle'); } catch {}
+        try { breadcrumb('sheet_tap_toggle', { next: !isExpanded }); } catch {}
+        setIsExpanded(!isExpanded);
+      }}
         hitSlop={12}
         style={styles.sheetHandleArea}
         accessibilityRole="button"
