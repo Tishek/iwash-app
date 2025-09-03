@@ -91,6 +91,11 @@ export default function BottomSheetContainer(props) {
   const [isFullyExpanded, setIsFullyExpanded] = useState(false);
   const filterBusyRef = useRef(false);
 
+  // Stable JS callbacks for runOnJS (avoid inline closures inside worklets)
+  const markNotAnimatingJS = () => { try { isAnimatingRef.current = false; } catch {} };
+  const panBeginLogJS = () => { try { breadcrumb('sheet_pan_begin', {}); } catch {} };
+  const panEndLogJS = () => { try { breadcrumb('sheet_pan_end', {}); } catch {} };
+
   const nameForPoint = (p) => {
     if (Math.abs(p - points.COLLAPSED) < 2) return 'COLLAPSED';
     if (Math.abs(p - points.HALF) < 2) return 'HALF';
@@ -129,7 +134,7 @@ export default function BottomSheetContainer(props) {
     try { onSnapStart?.(); } catch {}
     animatedY.value = withTiming(targetPx, { duration: 220 }, (finished) => {
       if (finished) runOnJS(finishAnim)(targetPx);
-      else runOnJS(() => { isAnimatingRef.current = false; })();
+      else runOnJS(markNotAnimatingJS)();
     });
   };
 
@@ -144,7 +149,7 @@ export default function BottomSheetContainer(props) {
     .onBegin(() => {
       // Bezpečné volání JS callbacku: použij runOnJS pouze s JS funkcí
       if (onSnapStart) { try { runOnJS(onSnapStart)(); } catch {} }
-      try { runOnJS(() => breadcrumb('sheet_pan_begin', {}))(); } catch {}
+      try { runOnJS(panBeginLogJS)(); } catch {}
       ctx.value = animatedY.value;
     })
     .onUpdate((e) => {
@@ -175,6 +180,10 @@ export default function BottomSheetContainer(props) {
       animatedY.value = withTiming(target, { duration: 220 }, (finished) => {
         if (finished) runOnJS(finishAnim)(target);
       });
+    })
+    .onFinalize(() => {
+      // Fires for both success and cancel/fail
+      try { runOnJS(panEndLogJS)(); } catch {}
     });
 
   // Výška panelu je vždy EXP (plná), jezdíme přes bottom

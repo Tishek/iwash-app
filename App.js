@@ -1,7 +1,7 @@
 // App.js
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { View, Dimensions, Alert, Linking, LogBox } from 'react-native';
+import { View, Dimensions, Alert, Linking, LogBox, AppState } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -104,9 +104,24 @@ function AppInner() {
           console.warn('[LastSessionTrace]', trace.items.length, 'events, last ts:', new Date(trace.ts).toISOString());
           trace.items.forEach((it) => console.warn(`[trace:${it.type}]`, it.ts, it.payload));
           await clearTrace();
+        } else {
+          // Make it explicit when there was nothing to read (helps debugging)
+          console.warn('[LastSessionTrace] none');
         }
-      } catch {}
+      } catch {
+        try { console.warn('[LastSessionTrace] read failed'); } catch {}
+      }
     })();
+  }, []);
+
+  // Při odchodu do pozadí nebo neaktivity zkus perzistovat trace okamžitě
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'background' || s === 'inactive') {
+        try { require('./src/utils/crashTrace').forceFlush?.(); } catch {}
+      }
+    });
+    return () => { try { sub?.remove?.(); } catch {} };
   }, []);
 
   const {
@@ -285,11 +300,13 @@ function AppInner() {
   const onSheetSnapStart = useCallback(() => {
     try { console.warn('[sheet] snap start'); } catch {}
     try { breadcrumb('sheet_snap_start', {}); } catch {}
-    setIsSheetAnimating(true);
+    // Defer state update to avoid re-entrancy from RNGH/reanimated callbacks
+    setTimeout(() => { try { setIsSheetAnimating(true); } catch {} }, 0);
   }, []);
 
   const onSheetSnapEnd = useCallback(({ name, targetPx, topY } = {}) => {
-    setIsSheetAnimating(false);
+    // Defer state update to avoid re-entrancy from UI thread callback
+    setTimeout(() => { try { setIsSheetAnimating(false); } catch {} }, 0);
     try { console.warn('[sheet] snap end ->', name, Math.round(targetPx || 0), 'topY:', Math.round(topY || 0)); } catch {}
     try { breadcrumb('sheet_snap_end', { name, targetPx, topY }); } catch {}
     // Pokud čeká centrování na první klik, proveď ho nyní

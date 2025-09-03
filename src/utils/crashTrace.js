@@ -2,6 +2,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEY = 'iwash_crash_trace_v1';
 const MAX_ITEMS = 120;
+// Types that should write-through immediately to survive sudden native crashes
+const IMMEDIATE_TYPES = new Set([
+  'error',
+  'warn',
+  'GlobalError',
+  'UnhandledPromiseRejection',
+  'sheet_pan_begin',
+  'sheet_pan_end',
+  'sheet_snap_start',
+  'sheet_snap_end',
+  'filter_click',
+  'filter_set',
+]);
 let buffer = [];
 let dirty = false;
 let flushTimer = null;
@@ -31,6 +44,11 @@ function scheduleFlush() {
 export function breadcrumb(type, payload) {
   const ts = new Date().toISOString();
   push({ ts, type, payload });
+  // For critical events, write-through immediately to maximize persistence
+  if (IMMEDIATE_TYPES.has(type)) {
+    // Avoid blocking UI thread: fire-and-forget
+    forceFlush().catch(() => {});
+  }
 }
 
 export async function readTrace() {
@@ -55,4 +73,3 @@ export async function forceFlush() {
 }
 
 export default { breadcrumb, readTrace, clearTrace, forceFlush };
-

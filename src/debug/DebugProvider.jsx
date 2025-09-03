@@ -91,8 +91,17 @@ export function DebugProvider({ children }) {
       if (showOverlay && captureConsole) stableAddLog('info', ...args);
     };
     // warn/error vždy zapisujeme (kvůli pádům)
-    console.warn = (...args) => { try { orig.warn?.(...args); } catch {} stableAddLog('warn', ...args); try { breadcrumb('warn', args.map(a => stringifySafe(a)).join(' ')); } catch {} };
-    console.error = (...args) => { try { orig.error?.(...args); } catch {} stableAddLog('error', ...args); try { breadcrumb('error', args.map(a => stringifySafe(a)).join(' ')); } catch {} };
+    const shouldBreadcrumb = (args) => {
+      try {
+        const s = args.map(a => stringifySafe(a)).join(' ');
+        // Nezapisuj echo při čtení trace (jinak nafukujeme logy)
+        if (s.includes('[LastSessionTrace]')) return false;
+        if (s.includes('[trace:')) return false;
+        return true;
+      } catch { return true; }
+    };
+    console.warn = (...args) => { try { orig.warn?.(...args); } catch {} stableAddLog('warn', ...args); try { if (shouldBreadcrumb(args)) breadcrumb('warn', args.map(a => stringifySafe(a)).join(' ')); } catch {} };
+    console.error = (...args) => { try { orig.error?.(...args); } catch {} stableAddLog('error', ...args); try { if (shouldBreadcrumb(args)) breadcrumb('error', args.map(a => stringifySafe(a)).join(' ')); } catch {} };
     
     return () => {
       try {

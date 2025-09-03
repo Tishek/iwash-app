@@ -1,7 +1,7 @@
 // src/components/ListContent.jsx
 import React, { useCallback } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { View, Text, FlatList } from 'react-native';
+import { View, Text, FlatList, Platform } from 'react-native';
 import ListHeader from '../components/ListHeader';
 import { DEV_ERROR } from '../utils/devlog';
 import FiltersRow from '../components/FiltersRow';
@@ -123,7 +123,7 @@ export default function ListContent({
                 bounces={false}
                 scrollEventThrottle={16}
                 nestedScrollEnabled
-                removeClippedSubviews
+                removeClippedSubviews={Platform.OS === 'android'}
                 getItemLayout={(data, index) => ({ length: ITEM_H + 8, offset: (ITEM_H + 8) * index, index })}
                 initialNumToRender={8}
                 windowSize={7}
