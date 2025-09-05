@@ -1,13 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const KEY = 'iwash_crash_trace_v1';
-const MAX_ITEMS = 120;
+const MAX_ITEMS = 800; // zvýšeno pro detailnější trasování pádů
 // Types that should write-through immediately to survive sudden native crashes
 const IMMEDIATE_TYPES = new Set([
   'error',
   'GlobalError',
   'UnhandledPromiseRejection',
   'warn',
+  // kritické akce UI – často těsně před pádem
   'sheet_pan_begin',
   'sheet_pan_end',
   'sheet_snap_start',

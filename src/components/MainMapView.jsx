@@ -121,6 +121,7 @@ export default function MainMapView({
       DEV_LOG('[MainMapView] Rendering cluster:', cluster.properties?.point_count, 'points');
       return (
         <ClusterRenderer
+          key={`cluster-${cluster?.id ?? cluster?.properties?.cluster_id ?? 'unknown'}`}
           cluster={cluster}
           onPress={onPress}
           disableFollow={disableFollow}

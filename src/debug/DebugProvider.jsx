@@ -107,25 +107,15 @@ export function DebugProvider({ children }) {
     console.log = (...args) => {
       try { orig.log?.(...args); } catch {}
       if (showOverlay && captureConsole) stableAddLog('log', ...args);
+      try { breadcrumb('log', args.map(a => stringifySafe(a)).join(' ')); } catch {}
     };
     console.info = (...args) => {
       try { orig.info?.(...args); } catch {}
       if (showOverlay && captureConsole) stableAddLog('info', ...args);
+      try { breadcrumb('info', args.map(a => stringifySafe(a)).join(' ')); } catch {}
     };
     // warn/error vždy zapisujeme (kvůli pádům)
-    const shouldBreadcrumb = (args) => {
-      try {
-        const s = args.map(a => stringifySafe(a)).join(' ');
-        // Nezapisuj echo při čtení trace (jinak nafukujeme logy)
-        if (s.includes('[LastSessionTrace]')) return false;
-        if (s.includes('[trace:')) return false;
-        // Odfiltruj vysoce-frekvenční šum
-        if (s.includes('[filters] rebuild')) return false;
-        if (s.includes('[filters] result length')) return false;
-        if (s.includes('[MainMapView] No region provided!')) return false;
-        return true;
-      } catch { return true; }
-    };
+    const shouldBreadcrumb = () => true; // Loguj úplně všechno bez filtrů
     console.warn = (...args) => {
       try { orig.warn?.(...args); } catch {}
       if (overlayRenderingRef.current) return;
